@@ -1,0 +1,164 @@
+:root {
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --accent: #006699;
+  --accent-soft: #e0f1f8;
+  --text: #222222;
+  --border: #dddddd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  background: var(--accent);
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.backlink {
+  color: #f5f5f5;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.backlink:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 1.5rem auto;
+  padding: 0 1rem 2rem;
+}
+
+.intro,
+.info-block {
+  background: var(--card-bg);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+}
+
+.speltak-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.speltak-card {
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  transition: transform 0.05s ease-out, box-shadow 0.05s ease-out, border-color 0.05s;
+}
+
+.speltak-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.speltak-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555555;
+}
+
+.speltak-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.planning-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.planning-table th,
+.planning-table td {
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.planning-table th {
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.planning-table tr:nth-child(even) td {
+  background: #fafafa;
+}
+
+.presence-cell {
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Later kunnen we states als 'aanwezig/afwezig' een kleur geven. */
+
+.admin-section {
+  margin-top: 1.5rem;
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#editModeButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#editModeButton:hover {
+  opacity: 0.9;
+}
+
+.admin-hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #555555;
+}
