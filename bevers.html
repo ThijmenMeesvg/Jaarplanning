@@ -8,35 +8,36 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* Kleine correcties bovenop jouw eigen style.css */
+    /* Extra minimale styling boven op jouw OVN style */
 
     td.editable:hover {
       background: #fff6cc;
       cursor: text;
     }
 
-    .presence-cell { 
+    .presence-cell {
       cursor: pointer;
-      font-size: 17px;
+      font-size: 18px;
       font-weight: bold;
     }
-    .presence-aanwezig { color: #0b4b26; }
-    .presence-afwezig { color: #c62828; }
 
     .delete-btn {
-      cursor: pointer;
-      color: #c62828;
-      font-weight: bold;
+      cursor:pointer;
+      color:#c62828;
+      font-size:18px;
+      font-weight:bold;
     }
 
     .add-row {
-      text-align: left;
-      padding: 10px;
-      cursor: pointer;
-      font-weight: bold;
-      background: #eef9ee;
+      text-align:left;
+      padding:10px;
+      background:#e8fbe8;
+      cursor:pointer;
+      font-weight:bold;
     }
-    .add-row:hover { background: #ddf2dd; }
+    .add-row:hover {
+      background:#d8f5d8;
+    }
 
     .row-grey { background:#eee !important; }
     .row-next { background:#d9f7d9 !important; }
@@ -44,11 +45,10 @@
     .row-kamp { background:#ffd9b5 !important; }
 
     .add-member-btn {
-      margin-top: 10px;
-      padding: 6px 10px;
-      background:#0066cc;
-      color:white;
+      padding:6px 12px;
+      background:#0073e6;
       border:none;
+      color:white;
       border-radius:4px;
       cursor:pointer;
     }
@@ -57,34 +57,31 @@
 
 <body data-speltak="bevers">
 
-  <!-- TOPBALK -->
   <header class="topbar">
     <div class="topbar-left">
       <img class="topbar-logo"
-           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
-           alt="OVN logo">
+           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png">
       <div class="topbar-title">
         <h1>Bevers – Jaarplanning</h1>
-        <span>Aanwezigheid, planning & overzicht</span>
+        <span>Planning, aanwezigheid & overzicht</span>
       </div>
     </div>
 
     <a class="backlink" href="index.html">← Terug</a>
   </header>
 
-  <!-- MAIN -->
-  <main class="container">
 
+  <main class="container">
     <section class="info-block">
       <h2>Planning</h2>
       <p>
-        Klik op een vakje om aanwezigheid te wijzigen.<br>
-        In bewerkmodus kun je inline opkomsten aanpassen, toevoegen en verwijderen.
+        Ouders kunnen aanwezigheid invullen door op een vak te klikken.<br>
+        In bewerkmodus kun je opkomsten en leden beheren.
       </p>
     </section>
 
     <button id="editButton" class="edit-button">Bewerkmodus</button>
-    <button id="addMemberButton" class="add-member-btn">+ Lid toevoegen</button>
+    <button id="addMemberButton" class="add-member-btn" style="display:none;">+ Lid toevoegen</button>
 
     <div class="table-wrapper">
       <table class="planning-table">
@@ -96,14 +93,12 @@
         <tbody id="tableBody"></tbody>
 
         <tfoot>
-          <tr class="add-row" id="addOpkomstRow">
+          <tr class="add-row" id="addOpkomstRow" style="display:none;">
             <td colspan="999">+ Opkomst toevoegen</td>
           </tr>
         </tfoot>
-
       </table>
     </div>
-
   </main>
 
   <script type="module" src="speltak.js"></script>
