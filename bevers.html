@@ -4,72 +4,25 @@
   <meta charset="UTF-8">
   <title>Bevers – Jaarplanning</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Jaarplanning en aanwezigheidsoverzicht voor de Bevers van Scouting Olivier van Noort.">
 
   <link rel="stylesheet" href="style.css">
-
-  <style>
-    /* Extra minimale styling boven op jouw OVN style */
-
-    td.editable:hover {
-      background: #fff6cc;
-      cursor: text;
-    }
-
-    .presence-cell {
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .delete-btn {
-      cursor:pointer;
-      color:#c62828;
-      font-size:18px;
-      font-weight:bold;
-    }
-
-    .add-row {
-      text-align:left;
-      padding:10px;
-      background:#e8fbe8;
-      cursor:pointer;
-      font-weight:bold;
-    }
-    .add-row:hover {
-      background:#d8f5d8;
-    }
-
-    .row-grey { background:#eee !important; }
-    .row-next { background:#d9f7d9 !important; }
-    .row-bijzonder { background:#fff4bf !important; }
-    .row-kamp { background:#ffd9b5 !important; }
-
-    .add-member-btn {
-      padding:6px 12px;
-      background:#0073e6;
-      border:none;
-      color:white;
-      border-radius:4px;
-      cursor:pointer;
-    }
-  </style>
 </head>
 
 <body data-speltak="bevers">
-
   <header class="topbar">
     <div class="topbar-left">
       <img class="topbar-logo"
-           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png">
+           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
+           alt="Scouting Olivier van Noort logo">
       <div class="topbar-title">
         <h1>Bevers – Jaarplanning</h1>
-        <span>Planning, aanwezigheid & overzicht</span>
+        <span>Planning, aanwezigheid &amp; overzicht</span>
       </div>
     </div>
 
     <a class="backlink" href="index.html">← Terug</a>
   </header>
-
 
   <main class="container">
     <section class="info-block">
@@ -80,8 +33,17 @@
       </p>
     </section>
 
-    <button id="editButton" class="edit-button">Bewerkmodus</button>
-    <button id="addMemberButton" class="add-member-btn" style="display:none;">+ Lid toevoegen</button>
+    <div class="planning-header-row">
+      <button id="editModeButton" class="edit-button">Bewerkmodus</button>
+      <button id="addMemberButton" class="add-member-btn hidden">+ Lid toevoegen</button>
+    </div>
+
+    <div class="planning-controls">
+      <button id="filterAll" class="active">Alle opkomsten</button>
+      <button id="filterFuture">Alleen komende</button>
+      <button id="filterPast">Alleen geweest</button>
+      <button id="printButton">Print overzicht</button>
+    </div>
 
     <div class="table-wrapper">
       <table class="planning-table">
@@ -93,7 +55,7 @@
         <tbody id="tableBody"></tbody>
 
         <tfoot>
-          <tr class="add-row" id="addOpkomstRow" style="display:none;">
+          <tr class="add-row hidden" id="addOpkomstRow">
             <td colspan="999">+ Opkomst toevoegen</td>
           </tr>
         </tfoot>
@@ -104,3 +66,4 @@
   <script type="module" src="speltak.js"></script>
 </body>
 </html>
+
