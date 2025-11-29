@@ -319,3 +319,15 @@ body {
   background: #e3f2fd; /* zacht blauw */
 }
 
+/* verticale naam-koppen boven de aanwezigheidscellen */
+th.name-vertical {
+  writing-mode: vertical-rl;     /* tekst verticaal */
+  transform: rotate(180deg);     /* zodat hij leesbaar is van onder naar boven */
+  white-space: nowrap;
+  padding: 4px 0;
+  text-align: left;
+  height: 120px;                 /* maak de header wat hoger */
+  font-weight: 600;
+}
+
+
