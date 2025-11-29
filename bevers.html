@@ -4,403 +4,371 @@
   <meta charset="UTF-8">
   <title>Bevers – Jaarplanning</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* --- Extra styles voor admin & modals --- */
+
+    .admin-panel {
+      display: none;
+      background: var(--card-bg);
+      padding: 1.2rem;
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      margin-top: 1.4rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .admin-panel h2 {
+      margin-top: 0;
+    }
+
+    .admin-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .admin-actions button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.4rem;
+      border: none;
+      background: var(--blue);
+      color: white;
+      cursor: pointer;
+    }
+
+    .admin-actions button:hover {
+      filter: brightness(0.9);
+    }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 0.6rem;
+      min-width: 300px;
+      max-width: 500px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+    }
+
+    .form-row {
+      margin-bottom: 0.9rem;
+    }
+
+    .form-row label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .form-row input,
+    .form-row select {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      border-radius: 0.3rem;
+      border: 1px solid #ccc;
+    }
+
+    .modal-buttons {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+    }
+
+    .modal-buttons button {
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.3rem;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      background: #ddd;
+    }
+
+    .btn-save {
+      background: var(--blue);
+      color: white;
+    }
+
+    .delete-button {
+      background: #c62828 !important;
+      color: white;
+    }
+
+  </style>
+
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-left">
-      <img
-        class="topbar-logo"
-        src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
-        alt="Logo Scouting Olivier van Noort"
-      >
+      <img class="topbar-logo"
+           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
+           alt="Logo OVN">
+
       <div class="topbar-title">
         <h1>Bevers – Jaarplanning</h1>
-        <span>Overzicht opkomsten en aanwezigheid</span>
+        <span>Overzicht opkomsten, aanwezigheid & beheer</span>
       </div>
     </div>
+
     <a class="backlink" href="index.html">← Terug naar overzicht</a>
   </header>
 
   <main class="container">
+
+    <!-- Info block -->
     <section class="info-block">
       <h2>Bevers</h2>
       <p>
-        Op deze pagina staat de jaarplanning van de Bevers.
-        De tabel wordt gevuld vanuit de Realtime Database. Door op de vakjes te klikken
-        kun je de aanwezigheid per kind of leiding aanpassen (– → ✔ → ✖ → –).
+        Op deze pagina staat de volledige jaarplanning van de Bevers.<br>
+        Klik op een vakje om aanwezigheid aan te passen.<br>
+        Leiding kan via de bewerkmodus opkomsten en leden beheren.
       </p>
     </section>
 
+    <!-- Tabel -->
     <section>
       <h2>Planning</h2>
       <div class="table-wrapper">
         <table class="planning-table">
           <thead>
-            <tr id="planning-head-row">
-              <!-- wordt door JavaScript gevuld -->
-            </tr>
+            <tr id="planning-head-row"></tr>
           </thead>
-          <tbody id="planning-body">
-            <!-- wordt door JavaScript gevuld -->
-          </tbody>
+          <tbody id="planning-body"></tbody>
         </table>
       </div>
     </section>
 
-    <section class="admin-section">
-      <button id="editModeButton">Bewerkmodus (alleen leiding)</button>
-      <p class="admin-hint">
-        Met bewerkmodus kunnen leidinggevenden leden beheren en later ook de planning aanpassen.
-        Ouders krijgen dit wachtwoord niet.
-      </p>
 
-      <div id="adminMembers" class="admin-members hidden">
-        <h3>Leden beheren</h3>
-        <div id="membersList" class="members-list">
-          <!-- lijst met huidige leden komt hier -->
+    <!-- Admin Toggle Button -->
+    <section class="admin-section">
+      <button id="editModeButton">Bewerkmodus</button>
+    </section>
+
+
+    <!-- ADMIN PANEL -->
+    <section id="adminPanel" class="admin-panel">
+
+      <h2>Beheer</h2>
+
+      <div class="admin-actions">
+        <button id="btnAddOpkomst">Opkomst toevoegen</button>
+        <button id="btnAddLid">Lid toevoegen</button>
+      </div>
+
+      <div>
+        <h3>Bestaande opkomsten</h3>
+        <div id="adminOpkomstenList"></div>
+      </div>
+
+      <div style="margin-top: 1.4rem;">
+        <h3>Bestaande leden</h3>
+        <div id="adminLedenList"></div>
+      </div>
+
+    </section>
+
+
+    <!-- ------------- MODALS ------------- -->
+
+
+    <!-- Modal: Opkomst toevoegen -->
+    <div id="modalAddOpkomst" class="modal">
+      <div class="modal-content">
+        <h3>Opkomst toevoegen</h3>
+
+        <div class="form-row">
+          <label>Datum</label>
+          <input type="date" id="addOpkomst_datum">
         </div>
 
-        <form id="addMemberForm" class="add-member-form">
-          <div class="form-row">
-            <label>
-              Naam
-              <input type="text" id="newMemberName" required placeholder="Bijv. Sofie">
-            </label>
-          </div>
-          <div class="form-row">
-            <label>
-              Type
-              <select id="newMemberType">
-                <option value="jeugdlid">Jeugdlid</option>
-                <option value="leiding">Leiding</option>
-              </select>
-            </label>
-          </div>
-          <button type="submit">Lid toevoegen</button>
-        </form>
+        <div class="form-row">
+          <label>Starttijd</label>
+          <input type="time" id="addOpkomst_start">
+        </div>
+
+        <div class="form-row">
+          <label>Eindtijd</label>
+          <input type="time" id="addOpkomst_eind">
+        </div>
+
+        <div class="form-row">
+          <label>Thema</label>
+          <input type="text" id="addOpkomst_thema">
+        </div>
+
+        <div class="form-row">
+          <label>Bijzonderheden</label>
+          <input type="text" id="addOpkomst_bijzonderheden">
+        </div>
+
+        <div class="form-row">
+          <label>Type opkomst</label>
+          <select id="addOpkomst_type">
+            <option value="normaal">Normaal</option>
+            <option value="bijzonder">Bijzonder</option>
+            <option value="kamp">Kamp</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Leiding (meerdere mogelijk)</label>
+          <select id="addOpkomst_leiding" multiple></select>
+        </div>
+
+        <div class="form-row">
+          <label>Bert met:</label>
+          <select id="addOpkomst_bert">
+            <option value="">Niemand</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn-cancel" data-close="modalAddOpkomst">Annuleren</button>
+          <button class="btn-save" id="saveAddOpkomst">Opslaan</button>
+        </div>
       </div>
-    </section>
+    </div>
+
+
+    <!-- Modal: Opkomst bewerken -->
+    <div id="modalEditOpkomst" class="modal">
+      <div class="modal-content">
+        <h3>Opkomst aanpassen</h3>
+
+        <input type="hidden" id="editOpkomst_id">
+
+        <div class="form-row">
+          <label>Datum</label>
+          <input type="date" id="editOpkomst_datum">
+        </div>
+
+        <div class="form-row">
+          <label>Starttijd</label>
+          <input type="time" id="editOpkomst_start">
+        </div>
+
+        <div class="form-row">
+          <label>Eindtijd</label>
+          <input type="time" id="editOpkomst_eind">
+        </div>
+
+        <div class="form-row">
+          <label>Thema</label>
+          <input type="text" id="editOpkomst_thema">
+        </div>
+
+        <div class="form-row">
+          <label>Bijzonderheden</label>
+          <input type="text" id="editOpkomst_bijzonderheden">
+        </div>
+
+        <div class="form-row">
+          <label>Type opkomst</label>
+          <select id="editOpkomst_type">
+            <option value="normaal">Normaal</option>
+            <option value="bijzonder">Bijzonder</option>
+            <option value="kamp">Kamp</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Leiding (meerdere mogelijk)</label>
+          <select id="editOpkomst_leiding" multiple></select>
+        </div>
+
+        <div class="form-row">
+          <label>Bert met:</label>
+          <select id="editOpkomst_bert">
+            <option value="">Niemand</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn-cancel" data-close="modalEditOpkomst">Annuleren</button>
+          <button class="btn-save" id="saveEditOpkomst">Opslaan</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Modal: Lid toevoegen -->
+    <div id="modalAddLid" class="modal">
+      <div class="modal-content">
+        <h3>Lid toevoegen</h3>
+
+        <div class="form-row">
+          <label>Naam</label>
+          <input type="text" id="addLid_naam">
+        </div>
+
+        <div class="form-row">
+          <label>Type</label>
+          <select id="addLid_type">
+            <option value="jeugd">Jeugdlid</option>
+            <option value="leiding">Leiding</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn-cancel" data-close="modalAddLid">Annuleren</button>
+          <button class="btn-save" id="saveAddLid">Opslaan</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Modal: Lid bewerken -->
+    <div id="modalEditLid" class="modal">
+      <div class="modal-content">
+        <h3>Lid aanpassen</h3>
+
+        <input type="hidden" id="editLid_id">
+
+        <div class="form-row">
+          <label>Naam</label>
+          <input type="text" id="editLid_naam">
+        </div>
+
+        <div class="form-row">
+          <label>Type</label>
+          <select id="editLid_type">
+            <option value="jeugd">Jeugdlid</option>
+            <option value="leiding">Leiding</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button class="btn-cancel" data-close="modalEditLid">Annuleren</button>
+          <button class="btn-save" id="saveEditLid">Opslaan</button>
+        </div>
+      </div>
+    </div>
+
+
   </main>
 
-  <!-- Firebase (modulaire SDK, versie 12) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      child,
-      get,
-      update,
-      push
-    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+  <!-- Laad de JS functionaliteit -->
+  <script type="module" src="bevers.js"></script>
 
-    // JOUW CONFIG
-    const firebaseConfig = {
-      apiKey: "AIzaSyAZN4QdTuOpk8lEKsyPuhynqZ9-GJLDE0s",
-      authDomain: "jaarplanning-ovn.firebaseapp.com",
-      databaseURL: "https://jaarplanning-ovn-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "jaarplanning-ovn",
-      storageBucket: "jaarplanning-ovn.firebasestorage.app",
-      messagingSenderId: "526104562356",
-      appId: "1:526104562356:web:ea211e722202d6383f65e1"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Simpel wachtwoord voor bewerkmodus – verander dit zelf in iets eigens
-    const ADMIN_PASSWORD = "bevers2025";
-
-    let leden = [];
-    let opkomsten = [];
-    let isAdmin = false;
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const storedAdmin = localStorage.getItem("beversAdmin") === "true";
-      isAdmin = storedAdmin;
-
-      const editButton = document.getElementById("editModeButton");
-      const addMemberForm = document.getElementById("addMemberForm");
-
-      if (editButton) {
-        editButton.addEventListener("click", onEditModeClick);
-      }
-      if (addMemberForm) {
-        addMemberForm.addEventListener("submit", onAddMemberSubmit);
-      }
-
-      updateAdminUI();
-      loadData();
-    });
-
-    async function loadData() {
-      try {
-        const rootRef = ref(db);
-        const snapshot = await get(child(rootRef, "bevers"));
-
-        if (!snapshot.exists()) {
-          console.warn("Geen data gevonden onder /bevers");
-          return;
-        }
-
-        const data = snapshot.val() || {};
-        const ledenObj = data.leden || {};
-        const opkomstenObj = data.opkomsten || {};
-
-        // leden → array met id, naam, volgorde, type
-        leden = Object.entries(ledenObj).map(([id, value]) => ({
-          id,
-          naam: value.naam || id,
-          volgorde: value.volgorde ?? 0,
-          type: value.type || "jeugdlid"
-        })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
-
-        // opkomsten → array met id + data, gesorteerd op datum (YYYY-MM-DD)
-        opkomsten = Object.entries(opkomstenObj).map(([id, value]) => ({
-          id,
-          datum: value.datum,
-          thema: value.thema || "",
-          bijzonderheden: value.bijzonderheden || "",
-          leiding: value.leiding || "",
-          aanwezigheid: value.aanwezigheid || {}
-        })).sort((a, b) => {
-          if (!a.datum || !b.datum) return 0;
-          return a.datum.localeCompare(b.datum);
-        });
-
-        renderTable();
-        renderMembersAdmin();
-      } catch (err) {
-        console.error("Fout bij laden data:", err);
-        alert("Er ging iets mis bij het ophalen van de Bevers-data.");
-      }
-    }
-
-    function renderTable() {
-      const headRow = document.getElementById("planning-head-row");
-      const body = document.getElementById("planning-body");
-
-      headRow.innerHTML = "";
-      body.innerHTML = "";
-
-      // vaste kolommen
-      ["Datum", "Thema", "Bijzonderheden", "Leiding"].forEach(label => {
-        const th = document.createElement("th");
-        th.textContent = label;
-        headRow.appendChild(th);
-      });
-
-      // leden-kolommen (zowel jeugdlid als leiding, zodat je ook leiding-aanwezigheid kunt bijhouden)
-      leden.forEach(lid => {
-        const th = document.createElement("th");
-        th.textContent = lid.naam;
-        headRow.appendChild(th);
-      });
-
-      // rijen
-      opkomsten.forEach(opkomst => {
-        const tr = document.createElement("tr");
-
-        addTextCell(tr, formatDate(opkomst.datum));
-        addTextCell(tr, opkomst.thema);
-        addTextCell(tr, opkomst.bijzonderheden);
-        addTextCell(tr, opkomst.leiding);
-
-        leden.forEach(lid => {
-          const td = document.createElement("td");
-          td.classList.add("presence-cell");
-
-          const state = (opkomst.aanwezigheid && opkomst.aanwezigheid[lid.id]) || "onbekend";
-
-          td.dataset.opkomstId = opkomst.id;
-          td.dataset.lidId = lid.id;
-          td.dataset.state = state;
-
-          updatePresenceCellAppearance(td);
-          td.addEventListener("click", onPresenceClick);
-
-          tr.appendChild(td);
-        });
-
-        body.appendChild(tr);
-      });
-    }
-
-    function addTextCell(tr, text) {
-      const td = document.createElement("td");
-      td.textContent = text || "";
-      tr.appendChild(td);
-    }
-
-    function formatDate(isoStr) {
-      if (!isoStr) return "";
-      const parts = isoStr.split("-");
-      if (parts.length !== 3) return isoStr;
-      return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-jjjj
-    }
-
-    function updatePresenceCellAppearance(td) {
-      const state = td.dataset.state || "onbekend";
-      td.classList.remove("presence-aanwezig", "presence-afwezig");
-
-      if (state === "aanwezig") {
-        td.textContent = "✔";
-        td.classList.add("presence-aanwezig");
-      } else if (state === "afwezig") {
-        td.textContent = "✖";
-        td.classList.add("presence-afwezig");
-      } else {
-        td.textContent = "–";
-      }
-    }
-
-    async function onPresenceClick(event) {
-      const td = event.currentTarget;
-      const current = td.dataset.state || "onbekend";
-      let next;
-
-      if (current === "onbekend") {
-        next = "aanwezig";
-      } else if (current === "aanwezig") {
-        next = "afwezig";
-      } else {
-        next = "onbekend";
-      }
-
-      td.dataset.state = next;
-      updatePresenceCellAppearance(td);
-
-      const opkomstId = td.dataset.opkomstId;
-      const lidId = td.dataset.lidId;
-
-      const updatesObj = {};
-      updatesObj[`bevers/opkomsten/${opkomstId}/aanwezigheid/${lidId}`] = next;
-
-      try {
-        await update(ref(db), updatesObj);
-      } catch (err) {
-        console.error("Fout bij opslaan aanwezigheid:", err);
-        alert("Opslaan van aanwezigheid is mislukt.");
-      }
-    }
-
-    // === Bewerkmodus (wachtwoord) ===
-
-    function onEditModeClick() {
-      if (isAdmin) {
-        // uitschakelen
-        isAdmin = false;
-        localStorage.removeItem("beversAdmin");
-        updateAdminUI();
-        return;
-      }
-
-      const pw = prompt("Voer het wachtwoord voor de Bevers-beheerder in:");
-      if (pw === null) {
-        return; // gebruiker annuleerde
-      }
-      if (pw === ADMIN_PASSWORD) {
-        isAdmin = true;
-        localStorage.setItem("beversAdmin", "true");
-        updateAdminUI();
-      } else {
-        alert("Onjuist wachtwoord.");
-      }
-    }
-
-    function updateAdminUI() {
-      const adminMembers = document.getElementById("adminMembers");
-      const editButton = document.getElementById("editModeButton");
-      if (!adminMembers || !editButton) return;
-
-      if (isAdmin) {
-        adminMembers.classList.remove("hidden");
-        editButton.textContent = "Bewerkmodus uitschakelen";
-        editButton.disabled = false;
-      } else {
-        adminMembers.classList.add("hidden");
-        editButton.textContent = "Bewerkmodus (alleen leiding)";
-        editButton.disabled = false;
-      }
-    }
-
-    // === Ledenbeheer ===
-
-    function renderMembersAdmin() {
-      const list = document.getElementById("membersList");
-      if (!list) return;
-
-      list.innerHTML = "";
-      if (!leden.length) {
-        list.textContent = "Nog geen leden toegevoegd.";
-        return;
-      }
-
-      leden.forEach(lid => {
-        const div = document.createElement("div");
-        div.className = "member-row";
-        const typeLabel = lid.type === "leiding" ? "Leiding" : "Jeugdlid";
-        div.textContent = `${lid.naam} (${typeLabel})`;
-        list.appendChild(div);
-      });
-    }
-
-    async function onAddMemberSubmit(event) {
-      event.preventDefault();
-      if (!isAdmin) {
-        alert("Alleen leiding kan leden toevoegen (schakel bewerkmodus in).");
-        return;
-      }
-
-      const nameInput = document.getElementById("newMemberName");
-      const typeSelect = document.getElementById("newMemberType");
-      const name = nameInput.value.trim();
-      const type = typeSelect.value;
-
-      if (!name) {
-        alert("Vul een naam in.");
-        return;
-      }
-
-      const volgorde =
-        leden.length
-          ? Math.max(...leden.map(l => l.volgorde || 0)) + 1
-          : 1;
-
-      try {
-        const updatesObj = {};
-        // nieuwe push-ID voor het lid
-        const ledenRef = ref(db, "bevers/leden");
-        const newLidRef = push(ledenRef);
-        const newId = newLidRef.key;
-
-        updatesObj[`bevers/leden/${newId}`] = {
-          naam: name,
-          type: type,
-          volgorde: volgorde
-        };
-
-        // voor alle bestaande opkomsten een "onbekend" bij dit nieuwe lid
-        opkomsten.forEach(opkomst => {
-          if (opkomst.id) {
-            updatesObj[`bevers/opkomsten/${opkomst.id}/aanwezigheid/${newId}`] = "onbekend";
-          }
-        });
-
-        await update(ref(db), updatesObj);
-
-        // formulier resetten
-        nameInput.value = "";
-        typeSelect.value = "jeugdlid";
-
-        // data opnieuw ophalen + tabel/ledenlijst verversen
-        await loadData();
-      } catch (err) {
-        console.error("Fout bij toevoegen lid:", err);
-        alert("Toevoegen van lid is mislukt.");
-      }
-    }
-  </script>
 </body>
 </html>
