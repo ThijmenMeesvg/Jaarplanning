@@ -311,3 +311,11 @@ body {
   background: #fde0e0 !important;
 }
 
+.col-jeugd {
+  background: #fff8e1; /* zacht geel */
+}
+
+.col-leiding {
+  background: #e3f2fd; /* zacht blauw */
+}
+
