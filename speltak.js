@@ -34,7 +34,7 @@ let isAdmin = false;
 
 let jeugd = [];    // [{id, naam, volgorde}]
 let leiding = [];  // [{id, naam, volgorde}]
-let leden = [];    // allebei samen, handig voor getNaam()
+let leden = [];    // beide samen, voor getNaam()
 let opkomsten = [];
 
 const todayISO = new Date().toISOString().split("T")[0];
@@ -72,7 +72,7 @@ function toggleAdmin() {
 
 /* -----------------------------------------------------
    DATA LADEN
-   Structuur per speltak:
+   Firebase structuur per speltak:
    - jeugdleden: { id: {naam, volgorde} }
    - leiding:    { id: {naam, volgorde} }
    - opkomsten:  { id: {...} }
@@ -106,7 +106,6 @@ async function loadData() {
     ...v
   }));
 
-  // sorteert op datum, toekomstige bovenaan, oude naar onder
   const toekomst = opkomsten.filter(o => o.datum >= todayISO);
   const verleden = opkomsten.filter(o => o.datum < todayISO);
   toekomst.sort((a, b) => a.datum.localeCompare(b.datum));
@@ -137,13 +136,15 @@ function renderTable() {
   addTH(headTop, "Eind", 1, 2);
   addTH(headTop, "Procor", 1, 2);
   addTH(headTop, "Bert 🧸", 1, 2);
+  addTH(headTop, "# Jeugd", 1, 2);
+  addTH(headTop, "# Leiding", 1, 2);
 
-  addTH(headTop, "JEUGD", jeugd.length, 1);
-  addTH(headTop, "LEIDING", leiding.length, 1);
+  /* Geen grote JEUGD/LEIDING group headers meer,
+     alleen onder de vaste kolommen de namen. */
 
   /* --- HEADER RIJ 2 (namen) --- */
-  // lege cells onder de vaste kolommen
-  for (let i = 0; i < 8; i++) addTH(headBot, "");
+  // lege cells onder de vaste kolommen (10 stuks)
+  for (let i = 0; i < 10; i++) addTH(headBot, "");
 
   jeugd.forEach(j => {
     const th = document.createElement("th");
@@ -167,7 +168,6 @@ function renderTable() {
 
     const tr = document.createElement("tr");
 
-    // kleur op basis van datum / type
     if (o.datum < todayISO) tr.classList.add("row-grey");
     else if (firstFuture) { tr.classList.add("row-next"); firstFuture = false; }
 
@@ -185,6 +185,27 @@ function renderTable() {
     addProcorCell(tr, o);
     addBertCell(tr, o);
 
+    // AANTALLEN JEUGD / LEIDING
+    const jeugdCount = jeugd.reduce(
+      (sum, j) => sum + (o.aanwezigheid[j.id] === "aanwezig" ? 1 : 0),
+      0
+    );
+    const leidingCount = leiding.reduce(
+      (sum, l) => sum + (o.aanwezigheid["leiding-" + l.id] === "aanwezig" ? 1 : 0),
+      0
+    );
+
+    const tdJeugdCnt = document.createElement("td");
+    tdJeugdCnt.textContent = jeugdCount;
+    tdJeugdCnt.classList.add("col-jeugd");
+    tr.appendChild(tdJeugdCnt);
+
+    const tdLeidingCnt = document.createElement("td");
+    tdLeidingCnt.textContent = leidingCount;
+    tdLeidingCnt.classList.add("col-leiding");
+    tr.appendChild(tdLeidingCnt);
+
+    // AANWEZIGHEIDSCELLEN
     jeugd.forEach(j => tr.appendChild(makePresenceCell(o, j.id, "jeugd")));
     leiding.forEach(l => tr.appendChild(makePresenceCell(o, "leiding-" + l.id, "leiding")));
 
@@ -223,7 +244,7 @@ function addDeleteCell(tr, o) {
 }
 
 /* -----------------------------------------------------
-   INLINE TEXT (Datum, Thema, etc.)
+   INLINE TEKSTCELLEN
 ----------------------------------------------------- */
 function addTextCell(tr, o, field, type) {
   const td = document.createElement("td");
@@ -249,11 +270,9 @@ function editText(td, o, field, type) {
 
   input.onblur = async () => {
     const val = input.value;
-
     await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
       [field]: val
     });
-
     loadData();
   };
 
@@ -279,7 +298,6 @@ function addProcorCell(tr, o) {
 
 function editProcor(td, o) {
   const sel = document.createElement("select");
-
   sel.innerHTML =
     `<option value=""></option>` +
     leiding.map(l => `<option value="${l.id}">${l.naam}</option>`).join("");
@@ -314,7 +332,6 @@ function addBertCell(tr, o) {
 
 function editBert(td, o) {
   const sel = document.createElement("select");
-
   sel.innerHTML =
     `<option value=""></option>` +
     jeugd.map(j => `<option value="${j.id}">${j.naam}</option>`).join("");
@@ -366,7 +383,7 @@ function makePresenceCell(o, key, groep) {
       ? "✖"
       : "?";
 
-  // Altijd klikbaar, ook voor ouders (dus geen isAdmin-check)
+  // Altijd klikbaar (ook voor ouders)
   td.onclick = async () => {
     const current = o.aanwezigheid[key] || "onbekend";
     const next =
@@ -387,7 +404,7 @@ function makePresenceCell(o, key, groep) {
 }
 
 /* -----------------------------------------------------
-   OPNKOMST TOEVOEGEN
+   OPKOMST TOEVOEGEN
 ----------------------------------------------------- */
 async function addNewOpkomst() {
   if (!isAdmin) return;
@@ -414,7 +431,7 @@ async function addNewOpkomst() {
 }
 
 /* -----------------------------------------------------
-   LIDTYPE KIEZEN (klein overlay-selectiemenu)
+   LIDTYPE KIEZEN (overlay met radio-buttons)
 ----------------------------------------------------- */
 function chooseMemberType() {
   return new Promise(resolve => {
@@ -473,9 +490,6 @@ function chooseMemberType() {
 
 /* -----------------------------------------------------
    LID TOEVOEGEN
-   - prompt voor naam
-   - overlay om type te kiezen
-   - opslaan in jeugdleden of leiding
 ----------------------------------------------------- */
 async function addNewMember() {
   if (!isAdmin) return;
@@ -490,20 +504,18 @@ async function addNewMember() {
   const listRef = ref(db, `${speltak}/${branch}`);
   const id = push(listRef).key;
 
-  const volgorde = (branch === "leiding" ? leiding.length : jeugd.length) + 1;
+  const volgorde = branch === "leiding" ? leiding.length + 1 : jeugd.length + 1;
 
   await set(ref(db, `${speltak}/${branch}/${id}`), {
     naam,
     volgorde
   });
 
-  // Aanwezigheid in alle bestaande opkomsten aanvullen
+  // Aanwezigheid voor alle bestaande opkomsten aanvullen
   for (const o of opkomsten) {
     const key = type === "leiding" ? `leiding-${id}` : id;
-    const aanwezigheidRef = ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`);
-    await update(aanwezigheidRef, {
-      [key]: "onbekend"
-    });
+    const aanwRef = ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`);
+    await update(aanwRef, { [key]: "onbekend" });
   }
 
   loadData();
