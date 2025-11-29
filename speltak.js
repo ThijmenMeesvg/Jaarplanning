@@ -23,8 +23,8 @@ const firebaseConfig = {
   appId: "1:526104562356:web:ea211e722202d6383f65e1"
 };
 
-initializeApp(firebaseConfig);
-const db = getDatabase();
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 /* -----------------------------------------------------
    VARIABELEN
@@ -32,9 +32,9 @@ const db = getDatabase();
 let speltak = "";
 let isAdmin = false;
 
-let leden = [];
-let jeugd = [];
-let leiding = [];
+let jeugd = [];    // [{id, naam, volgorde}]
+let leiding = [];  // [{id, naam, volgorde}]
+let leden = [];    // allebei samen, handig voor getNaam()
 let opkomsten = [];
 
 const todayISO = new Date().toISOString().split("T")[0];
@@ -72,24 +72,46 @@ function toggleAdmin() {
 
 /* -----------------------------------------------------
    DATA LADEN
+   Structuur per speltak:
+   - jeugdleden: { id: {naam, volgorde} }
+   - leiding:    { id: {naam, volgorde} }
+   - opkomsten:  { id: {...} }
 ----------------------------------------------------- */
 async function loadData() {
   const snap = await get(child(ref(db), speltak));
-  const data = snap.exists() ? snap.val() : { leden: {}, opkomsten: {} };
+  const data = snap.exists() ? snap.val() : {};
 
-  // Eenvoudig: neem opgeslagen type direct over ("jeugd" of "leiding")
-  leden = Object.entries(data.leden || {}).map(([id, v]) => ({
+  const jeugdData = data.jeugdleden || {};
+  const leidingData = data.leiding || {};
+
+  jeugd = Object.entries(jeugdData).map(([id, v]) => ({
     id,
     naam: v.naam,
-    type: v.type || "jeugd",
-    volgorde: v.volgorde || 0
+    volgorde: v.volgorde ?? 0
+  })).sort((a, b) => a.volgorde - b.volgorde);
+
+  leiding = Object.entries(leidingData).map(([id, v]) => ({
+    id,
+    naam: v.naam,
+    volgorde: v.volgorde ?? 0
+  })).sort((a, b) => a.volgorde - b.volgorde);
+
+  leden = [
+    ...jeugd.map(j => ({ ...j, type: "jeugd" })),
+    ...leiding.map(l => ({ ...l, type: "leiding" }))
+  ];
+
+  opkomsten = Object.entries(data.opkomsten || {}).map(([id, v]) => ({
+    id,
+    ...v
   }));
 
-  jeugd = leden.filter(l => l.type === "jeugd").sort((a, b) => a.volgorde - b.volgorde);
-  leiding = leden.filter(l => l.type === "leiding").sort((a, b) => a.volgorde - b.volgorde);
-
-  opkomsten = Object.entries(data.opkomsten || {}).map(([id, v]) => ({ id, ...v }));
-  opkomsten.sort((a, b) => a.datum.localeCompare(b.datum));
+  // sorteert op datum, toekomstige bovenaan, oude naar onder
+  const toekomst = opkomsten.filter(o => o.datum >= todayISO);
+  const verleden = opkomsten.filter(o => o.datum < todayISO);
+  toekomst.sort((a, b) => a.datum.localeCompare(b.datum));
+  verleden.sort((a, b) => a.datum.localeCompare(b.datum));
+  opkomsten = [...toekomst, ...verleden];
 
   renderTable();
 }
@@ -106,7 +128,7 @@ function renderTable() {
   headBot.innerHTML = "";
   body.innerHTML = "";
 
-  /* -------- HEADER TOP -------- */
+  /* --- HEADER RIJ 1 --- */
   addTH(headTop, "🗑", 1, 2);
   addTH(headTop, "Datum", 1, 2);
   addTH(headTop, "Thema", 1, 2);
@@ -115,50 +137,63 @@ function renderTable() {
   addTH(headTop, "Eind", 1, 2);
   addTH(headTop, "Procor", 1, 2);
   addTH(headTop, "Bert 🧸", 1, 2);
+
   addTH(headTop, "JEUGD", jeugd.length, 1);
   addTH(headTop, "LEIDING", leiding.length, 1);
 
-  /* -------- HEADER BOTTOM -------- */
+  /* --- HEADER RIJ 2 (namen) --- */
+  // lege cells onder de vaste kolommen
   for (let i = 0; i < 8; i++) addTH(headBot, "");
 
-  jeugd.forEach(j => addTH(headBot, j.naam));
-  leiding.forEach(l => addTH(headBot, l.naam));
+  jeugd.forEach(j => {
+    const th = document.createElement("th");
+    th.textContent = j.naam;
+    th.classList.add("col-jeugd");
+    headBot.appendChild(th);
+  });
 
-  /* -------- BODY -------- */
+  leiding.forEach(l => {
+    const th = document.createElement("th");
+    th.textContent = l.naam;
+    th.classList.add("col-leiding");
+    headBot.appendChild(th);
+  });
+
+  /* --- BODY --- */
   let firstFuture = true;
 
-  opkomsten.forEach(opkomst => {
-    ensurePresence(opkomst);
+  opkomsten.forEach(o => {
+    ensurePresence(o);
 
     const tr = document.createElement("tr");
 
-    if (opkomst.datum < todayISO) {
-      tr.classList.add("row-grey");
-    } else if (firstFuture) {
-      tr.classList.add("row-next");
-      firstFuture = false;
-    }
+    // kleur op basis van datum / type
+    if (o.datum < todayISO) tr.classList.add("row-grey");
+    else if (firstFuture) { tr.classList.add("row-next"); firstFuture = false; }
 
-    addDeleteCell(tr, opkomst);
+    if (o.typeOpkomst === "bijzonder") tr.classList.add("row-bijzonder");
+    if (o.typeOpkomst === "kamp") tr.classList.add("row-kamp");
 
-    addTextCell(tr, opkomst, "datum", "date");
-    addTextCell(tr, opkomst, "thema", "text");
-    addTextCell(tr, opkomst, "bijzonderheden", "text");
-    addTextCell(tr, opkomst, "starttijd", "time");
-    addTextCell(tr, opkomst, "eindtijd", "time");
+    addDeleteCell(tr, o);
 
-    addProcorCell(tr, opkomst);
-    addBertCell(tr, opkomst);
+    addTextCell(tr, o, "datum", "date");
+    addTextCell(tr, o, "thema", "text");
+    addTextCell(tr, o, "bijzonderheden", "text");
+    addTextCell(tr, o, "starttijd", "time");
+    addTextCell(tr, o, "eindtijd", "time");
 
-    jeugd.forEach(j => tr.appendChild(makePresenceCell(opkomst, j.id)));
-    leiding.forEach(l => tr.appendChild(makePresenceCell(opkomst, "leiding-" + l.id)));
+    addProcorCell(tr, o);
+    addBertCell(tr, o);
+
+    jeugd.forEach(j => tr.appendChild(makePresenceCell(o, j.id, "jeugd")));
+    leiding.forEach(l => tr.appendChild(makePresenceCell(o, "leiding-" + l.id, "leiding")));
 
     body.appendChild(tr);
   });
 }
 
 /* -----------------------------------------------------
-   HEADER CEL HELPER
+   HEADER HELPER
 ----------------------------------------------------- */
 function addTH(row, text, col = 1, rowsp = 1) {
   const th = document.createElement("th");
@@ -178,10 +213,9 @@ function addDeleteCell(tr, o) {
 
   if (isAdmin) {
     td.onclick = async () => {
-      if (confirm("Weet je zeker dat je deze opkomst wilt verwijderen?")) {
-        await remove(ref(db, `${speltak}/opkomsten/${o.id}`));
-        loadData();
-      }
+      if (!confirm("Weet je zeker dat je deze opkomst wilt verwijderen?")) return;
+      await remove(ref(db, `${speltak}/opkomsten/${o.id}`));
+      loadData();
     };
   }
 
@@ -189,7 +223,7 @@ function addDeleteCell(tr, o) {
 }
 
 /* -----------------------------------------------------
-   INLINE TEXT CEL
+   INLINE TEXT (Datum, Thema, etc.)
 ----------------------------------------------------- */
 function addTextCell(tr, o, field, type) {
   const td = document.createElement("td");
@@ -204,10 +238,10 @@ function addTextCell(tr, o, field, type) {
 }
 
 function editText(td, o, field, type) {
-  const old = td.textContent;
+  const oldVal = td.textContent;
   const input = document.createElement("input");
   input.type = type;
-  input.value = old;
+  input.value = oldVal;
 
   td.innerHTML = "";
   td.appendChild(input);
@@ -216,27 +250,24 @@ function editText(td, o, field, type) {
   input.onblur = async () => {
     const val = input.value;
 
-    if (field === "datum") {
-      await moveOpkomst(o, val);
-    } else {
-      await update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: val });
-    }
+    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+      [field]: val
+    });
 
     loadData();
   };
 
-  input.onkeydown = (e) => {
+  input.onkeydown = e => {
     if (e.key === "Enter") input.blur();
   };
 }
 
 /* -----------------------------------------------------
-   PROCOR
+   PROCOR (dropdown leiding)
 ----------------------------------------------------- */
 function addProcorCell(tr, o) {
   const td = document.createElement("td");
-  const label = o.procor ? getNaam(o.procor) : (isAdmin ? "(kies Procor)" : "");
-  td.textContent = label;
+  td.textContent = getNaam(o.procor);
 
   if (isAdmin) {
     td.classList.add("editable");
@@ -248,8 +279,9 @@ function addProcorCell(tr, o) {
 
 function editProcor(td, o) {
   const sel = document.createElement("select");
+
   sel.innerHTML =
-    `<option value="">(kies Procor)</option>` +
+    `<option value=""></option>` +
     leiding.map(l => `<option value="${l.id}">${l.naam}</option>`).join("");
 
   sel.value = o.procor || "";
@@ -258,18 +290,19 @@ function editProcor(td, o) {
   sel.focus();
 
   sel.onblur = async () => {
-    await update(ref(db, `${speltak}/opkomsten/${o.id}`), { procor: sel.value });
+    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+      procor: sel.value
+    });
     loadData();
   };
 }
 
 /* -----------------------------------------------------
-   BERT
+   BERT (dropdown jeugd)
 ----------------------------------------------------- */
 function addBertCell(tr, o) {
   const td = document.createElement("td");
-  const label = o.bert_met ? getNaam(o.bert_met) : (isAdmin ? "(kies Bert)" : "");
-  td.textContent = label;
+  td.textContent = getNaam(o.bert_met);
 
   if (isAdmin) {
     td.classList.add("editable");
@@ -283,7 +316,7 @@ function editBert(td, o) {
   const sel = document.createElement("select");
 
   sel.innerHTML =
-    `<option value="">(kies Bert)</option>` +
+    `<option value=""></option>` +
     jeugd.map(j => `<option value="${j.id}">${j.naam}</option>`).join("");
 
   sel.value = o.bert_met || "";
@@ -319,24 +352,27 @@ function ensurePresence(o) {
   });
 }
 
-function makePresenceCell(o, key) {
-  const state = o.aanwezigheid[key];
+function makePresenceCell(o, key, groep) {
+  const state = o.aanwezigheid[key] || "onbekend";
   const td = document.createElement("td");
   td.classList.add("presence-cell");
+  td.classList.add(groep === "leiding" ? "col-leiding" : "col-jeugd");
 
+  // ? / ✔ / ✖
   td.textContent =
     state === "aanwezig"
       ? "✔"
       : state === "afwezig"
       ? "✖"
-      : "–";
+      : "?";
 
-  // Altijd klikbaar (ouders moeten dit kunnen invullen)
+  // Altijd klikbaar, ook voor ouders (dus geen isAdmin-check)
   td.onclick = async () => {
+    const current = o.aanwezigheid[key] || "onbekend";
     const next =
-      state === "onbekend"
+      current === "onbekend"
         ? "aanwezig"
-        : state === "aanwezig"
+        : current === "aanwezig"
         ? "afwezig"
         : "onbekend";
 
@@ -351,22 +387,7 @@ function makePresenceCell(o, key) {
 }
 
 /* -----------------------------------------------------
-   DATUM WIJZIGEN (KEY MOVE)
------------------------------------------------------ */
-async function moveOpkomst(o, newDate) {
-  const oldRef = ref(db, `${speltak}/opkomsten/${o.id}`);
-  const newId = newDate;
-  const newRef = ref(db, `${speltak}/opkomsten/${newId}`);
-
-  const updated = { ...o, datum: newDate };
-  delete updated.id;
-
-  await set(newRef, updated);
-  await remove(oldRef);
-}
-
-/* -----------------------------------------------------
-   OPKOMST TOEVOEGEN
+   OPNKOMST TOEVOEGEN
 ----------------------------------------------------- */
 async function addNewOpkomst() {
   if (!isAdmin) return;
@@ -393,7 +414,7 @@ async function addNewOpkomst() {
 }
 
 /* -----------------------------------------------------
-   LIDTYPE KIEZEN (OVERLAY MET RADIOBUTTONS)
+   LIDTYPE KIEZEN (klein overlay-selectiemenu)
 ----------------------------------------------------- */
 function chooseMemberType() {
   return new Promise(resolve => {
@@ -424,7 +445,7 @@ function chooseMemberType() {
         Leiding
       </label>
       <div style="margin-top:12px;text-align:right;">
-        <button type="button" id="cancelTypeBtn" style="margin-right:8px;">Annuleer</button>
+        <button type="button" id="cancelTypeBtn" style="margin-right:8px;">Annuleren</button>
         <button type="button" id="okTypeBtn">OK</button>
       </div>
     `;
@@ -452,6 +473,9 @@ function chooseMemberType() {
 
 /* -----------------------------------------------------
    LID TOEVOEGEN
+   - prompt voor naam
+   - overlay om type te kiezen
+   - opslaan in jeugdleden of leiding
 ----------------------------------------------------- */
 async function addNewMember() {
   if (!isAdmin) return;
@@ -462,25 +486,24 @@ async function addNewMember() {
   const type = await chooseMemberType();
   if (!type) return; // geannuleerd
 
-  const id = push(ref(db, `${speltak}/leden`)).key;
+  const branch = type === "leiding" ? "leiding" : "jeugdleden";
+  const listRef = ref(db, `${speltak}/${branch}`);
+  const id = push(listRef).key;
 
-  await set(ref(db, `${speltak}/leden/${id}`), {
+  const volgorde = (branch === "leiding" ? leiding.length : jeugd.length) + 1;
+
+  await set(ref(db, `${speltak}/${branch}/${id}`), {
     naam,
-    type,
-    volgorde: leden.length + 1
+    volgorde
   });
 
-  // Aanwezigheid voor alle bestaande opkomsten aanvullen
+  // Aanwezigheid in alle bestaande opkomsten aanvullen
   for (const o of opkomsten) {
-    if (type === "leiding") {
-      await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
-        ["leiding-" + id]: "onbekend"
-      });
-    } else {
-      await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
-        [id]: "onbekend"
-      });
-    }
+    const key = type === "leiding" ? `leiding-${id}` : id;
+    const aanwezigheidRef = ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`);
+    await update(aanwezigheidRef, {
+      [key]: "onbekend"
+    });
   }
 
   loadData();
@@ -491,8 +514,8 @@ async function addNewMember() {
 ----------------------------------------------------- */
 function getNaam(id) {
   if (!id) return "";
-  const f = leden.find(l => l.id === id);
-  return f ? f.naam : "";
+  const l = leden.find(x => x.id === id);
+  return l ? l.naam : "";
 }
 
 /* -----------------------------------------------------
