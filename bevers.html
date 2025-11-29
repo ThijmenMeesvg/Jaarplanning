@@ -5,11 +5,10 @@
   <title>Bevers – Jaarplanning</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- JOUW STYLE.CSS -->
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* Kleine aanvullingen op jouw eigen stylesheet */
+    /* Kleine correcties bovenop jouw eigen style.css */
 
     td.editable:hover {
       background: #fff6cc;
@@ -39,11 +38,20 @@
     }
     .add-row:hover { background: #ddf2dd; }
 
-    /* Rijkleuren voor opkomsten */
-    .row-grey { background: #e8e8e8 !important; }
-    .row-next { background: #d9f7d9 !important; }
-    .row-bijzonder { background: #fff4bf !important; }
-    .row-kamp { background: #ffd9b5 !important; }
+    .row-grey { background:#eee !important; }
+    .row-next { background:#d9f7d9 !important; }
+    .row-bijzonder { background:#fff4bf !important; }
+    .row-kamp { background:#ffd9b5 !important; }
+
+    .add-member-btn {
+      margin-top: 10px;
+      padding: 6px 10px;
+      background:#0066cc;
+      color:white;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+    }
   </style>
 </head>
 
@@ -64,8 +72,7 @@
     <a class="backlink" href="index.html">← Terug</a>
   </header>
 
-
-  <!-- CONTAINER -->
+  <!-- MAIN -->
   <main class="container">
 
     <section class="info-block">
@@ -76,17 +83,16 @@
       </p>
     </section>
 
-    <!-- BEWERKMODUS ---------------------------------->
     <button id="editButton" class="edit-button">Bewerkmodus</button>
+    <button id="addMemberButton" class="add-member-btn">+ Lid toevoegen</button>
 
-
-    <!-- TABEL ---------------------------------------->
     <div class="table-wrapper">
       <table class="planning-table">
         <thead>
           <tr id="headerRowTop"></tr>
           <tr id="headerRowBottom"></tr>
         </thead>
+
         <tbody id="tableBody"></tbody>
 
         <tfoot>
@@ -94,6 +100,7 @@
             <td colspan="999">+ Opkomst toevoegen</td>
           </tr>
         </tfoot>
+
       </table>
     </div>
 
