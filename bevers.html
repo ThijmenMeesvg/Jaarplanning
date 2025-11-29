@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Bevers – Jaarplanning</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Bevers – Jaarplanning</h1>
+    <a class="backlink" href="index.html">← Terug naar overzicht</a>
+  </header>
+
+  <main class="container">
+    <section class="info-block">
+      <p>
+        Op deze pagina staat de jaarplanning van de Bevers. 
+        Iedereen kan de aanwezigheid aanvinken. 
+        Alleen leiding kan de planning zelf aanpassen via de bewerkmodus (komt later met wachtwoord).
+      </p>
+    </section>
+
+    <section>
+      <h2>Planning</h2>
+      <div class="table-wrapper">
+        <table class="planning-table">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Thema</th>
+              <th>Bijzonderheden</th>
+              <th>Leiding</th>
+              <th>Anna</th>
+              <th>Bram</th>
+              <th>Kim</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>01-02-2025</td>
+              <td>Indianen</td>
+              <td>Neem regenlaarzen mee</td>
+              <td>Thijmen</td>
+              <td class="presence-cell">–</td>
+              <td class="presence-cell">–</td>
+              <td class="presence-cell">–</td>
+            </tr>
+            <tr>
+              <td>08-02-2025</td>
+              <td>Waterpret</td>
+              <td>Handdoek en zwempak</td>
+              <td>Imme</td>
+              <td class="presence-cell">–</td>
+              <td class="presence-cell">–</td>
+              <td class="presence-cell">–</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <button id="editModeButton">Bewerkmodus (later met wachtwoord)</button>
+      <p class="admin-hint">
+        In een volgende stap maken we hier echte bewerk-knoppen van die alleen beschikbaar zijn
+        na het invoeren van een wachtwoord. Voor nu is dit alleen een placeholder.
+      </p>
+    </section>
+  </main>
+
+  <!-- Later kun je hier bevers.js includen voor Firebase en kliklogica -->
+  <!-- <script src="bevers.js"></script> -->
+</body>
+</html>
