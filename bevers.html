@@ -28,7 +28,7 @@
       <p>
         Op deze pagina staat de jaarplanning van de Bevers.
         De tabel wordt gevuld vanuit de Realtime Database. Door op de vakjes te klikken
-        kun je de aanwezigheid per kind aanpassen (– → ✔ → ✖ → –).
+        kun je de aanwezigheid per kind of leiding aanpassen (– → ✔ → ✖ → –).
       </p>
     </section>
 
@@ -49,11 +49,37 @@
     </section>
 
     <section class="admin-section">
-      <button id="editModeButton" disabled>Bewerkmodus (komt later)</button>
+      <button id="editModeButton">Bewerkmodus (alleen leiding)</button>
       <p class="admin-hint">
-        In een volgende stap voegen we hier een bewerkmodus met wachtwoord toe
-        om nieuwe opkomsten te maken en bestaande aan te passen.
+        Met bewerkmodus kunnen leidinggevenden leden beheren en later ook de planning aanpassen.
+        Ouders krijgen dit wachtwoord niet.
       </p>
+
+      <div id="adminMembers" class="admin-members hidden">
+        <h3>Leden beheren</h3>
+        <div id="membersList" class="members-list">
+          <!-- lijst met huidige leden komt hier -->
+        </div>
+
+        <form id="addMemberForm" class="add-member-form">
+          <div class="form-row">
+            <label>
+              Naam
+              <input type="text" id="newMemberName" required placeholder="Bijv. Sofie">
+            </label>
+          </div>
+          <div class="form-row">
+            <label>
+              Type
+              <select id="newMemberType">
+                <option value="jeugdlid">Jeugdlid</option>
+                <option value="leiding">Leiding</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit">Lid toevoegen</button>
+        </form>
+      </div>
     </section>
   </main>
 
@@ -65,10 +91,11 @@
       ref,
       child,
       get,
-      update
+      update,
+      push
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-    // JOUW CONFIG (zoals je al had)
+    // JOUW CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAZN4QdTuOpk8lEKsyPuhynqZ9-GJLDE0s",
       authDomain: "jaarplanning-ovn.firebaseapp.com",
@@ -82,10 +109,28 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Simpel wachtwoord voor bewerkmodus – verander dit zelf in iets eigens
+    const ADMIN_PASSWORD = "bevers2025";
+
     let leden = [];
     let opkomsten = [];
+    let isAdmin = false;
 
     document.addEventListener("DOMContentLoaded", () => {
+      const storedAdmin = localStorage.getItem("beversAdmin") === "true";
+      isAdmin = storedAdmin;
+
+      const editButton = document.getElementById("editModeButton");
+      const addMemberForm = document.getElementById("addMemberForm");
+
+      if (editButton) {
+        editButton.addEventListener("click", onEditModeClick);
+      }
+      if (addMemberForm) {
+        addMemberForm.addEventListener("submit", onAddMemberSubmit);
+      }
+
+      updateAdminUI();
       loadData();
     });
 
@@ -103,11 +148,12 @@
         const ledenObj = data.leden || {};
         const opkomstenObj = data.opkomsten || {};
 
-        // leden → array met id, naam, volgorde
+        // leden → array met id, naam, volgorde, type
         leden = Object.entries(ledenObj).map(([id, value]) => ({
           id,
           naam: value.naam || id,
-          volgorde: value.volgorde ?? 0
+          volgorde: value.volgorde ?? 0,
+          type: value.type || "jeugdlid"
         })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
 
         // opkomsten → array met id + data, gesorteerd op datum (YYYY-MM-DD)
@@ -124,6 +170,7 @@
         });
 
         renderTable();
+        renderMembersAdmin();
       } catch (err) {
         console.error("Fout bij laden data:", err);
         alert("Er ging iets mis bij het ophalen van de Bevers-data.");
@@ -144,7 +191,7 @@
         headRow.appendChild(th);
       });
 
-      // leden-kolommen
+      // leden-kolommen (zowel jeugdlid als leiding, zodat je ook leiding-aanwezigheid kunt bijhouden)
       leden.forEach(lid => {
         const th = document.createElement("th");
         th.textContent = lid.naam;
@@ -171,7 +218,6 @@
           td.dataset.state = state;
 
           updatePresenceCellAppearance(td);
-
           td.addEventListener("click", onPresenceClick);
 
           tr.appendChild(td);
@@ -228,15 +274,131 @@
       const opkomstId = td.dataset.opkomstId;
       const lidId = td.dataset.lidId;
 
-      const aanwezigheidRef = ref(db, `bevers/opkomsten/${opkomstId}/aanwezigheid`);
+      const updatesObj = {};
+      updatesObj[`bevers/opkomsten/${opkomstId}/aanwezigheid/${lidId}`] = next;
 
       try {
-        await update(aanwezigheidRef, {
-          [lidId]: next
-        });
+        await update(ref(db), updatesObj);
       } catch (err) {
         console.error("Fout bij opslaan aanwezigheid:", err);
         alert("Opslaan van aanwezigheid is mislukt.");
+      }
+    }
+
+    // === Bewerkmodus (wachtwoord) ===
+
+    function onEditModeClick() {
+      if (isAdmin) {
+        // uitschakelen
+        isAdmin = false;
+        localStorage.removeItem("beversAdmin");
+        updateAdminUI();
+        return;
+      }
+
+      const pw = prompt("Voer het wachtwoord voor de Bevers-beheerder in:");
+      if (pw === null) {
+        return; // gebruiker annuleerde
+      }
+      if (pw === ADMIN_PASSWORD) {
+        isAdmin = true;
+        localStorage.setItem("beversAdmin", "true");
+        updateAdminUI();
+      } else {
+        alert("Onjuist wachtwoord.");
+      }
+    }
+
+    function updateAdminUI() {
+      const adminMembers = document.getElementById("adminMembers");
+      const editButton = document.getElementById("editModeButton");
+      if (!adminMembers || !editButton) return;
+
+      if (isAdmin) {
+        adminMembers.classList.remove("hidden");
+        editButton.textContent = "Bewerkmodus uitschakelen";
+        editButton.disabled = false;
+      } else {
+        adminMembers.classList.add("hidden");
+        editButton.textContent = "Bewerkmodus (alleen leiding)";
+        editButton.disabled = false;
+      }
+    }
+
+    // === Ledenbeheer ===
+
+    function renderMembersAdmin() {
+      const list = document.getElementById("membersList");
+      if (!list) return;
+
+      list.innerHTML = "";
+      if (!leden.length) {
+        list.textContent = "Nog geen leden toegevoegd.";
+        return;
+      }
+
+      leden.forEach(lid => {
+        const div = document.createElement("div");
+        div.className = "member-row";
+        const typeLabel = lid.type === "leiding" ? "Leiding" : "Jeugdlid";
+        div.textContent = `${lid.naam} (${typeLabel})`;
+        list.appendChild(div);
+      });
+    }
+
+    async function onAddMemberSubmit(event) {
+      event.preventDefault();
+      if (!isAdmin) {
+        alert("Alleen leiding kan leden toevoegen (schakel bewerkmodus in).");
+        return;
+      }
+
+      const nameInput = document.getElementById("newMemberName");
+      const typeSelect = document.getElementById("newMemberType");
+      const name = nameInput.value.trim();
+      const type = typeSelect.value;
+
+      if (!name) {
+        alert("Vul een naam in.");
+        return;
+      }
+
+      const volgorde =
+        leden.length
+          ? Math.max(...leden.map(l => l.volgorde || 0)) + 1
+          : 1;
+
+      try {
+        const updatesObj = {};
+        // nieuwe push-ID voor het lid
+        const ledenRef = ref(db, "bevers/leden");
+        const newLidRef = push(ledenRef);
+        const newId = newLidRef.key;
+
+        updatesObj[`bevers/leden/${newId}`] = {
+          naam: name,
+          type: type,
+          volgorde: volgorde
+        };
+
+        // voor alle bestaande opkomsten een "onbekend" bij dit nieuwe lid
+        opkomsten.forEach(opkomst => {
+          if (opkomst.id) {
+            updatesObj[`bevers/opkomsten/${opkomst.id}/aanwezigheid/${newId}`] = "onbekend";
+          }
+        });
+
+        await update(ref(db), updatesObj);
+
+        // formulier resetten
+        nameInput.value = "";
+        typeSelect.value = "jeugdlid";
+
+        // data opnieuw ophalen + tabel/ledenlijst verversen
+        await loadData();
+      } catch (err) {
+        console.error("Fout bij toevoegen lid:", err);
+        alert("Toevoegen van lid is mislukt.");
       }
     }
   </script>
