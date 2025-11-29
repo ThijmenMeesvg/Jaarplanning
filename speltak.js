@@ -146,19 +146,20 @@ function renderTable() {
   // lege cells onder de vaste kolommen (10 stuks)
   for (let i = 0; i < 10; i++) addTH(headBot, "");
 
-  jeugd.forEach(j => {
-    const th = document.createElement("th");
-    th.textContent = j.naam;
-    th.classList.add("col-jeugd");
-    headBot.appendChild(th);
-  });
-
-  leiding.forEach(l => {
-    const th = document.createElement("th");
-    th.textContent = l.naam;
-    th.classList.add("col-leiding");
-    headBot.appendChild(th);
-  });
+    jeugd.forEach(j => {
+     const th = document.createElement("th");
+     th.textContent = j.naam;
+     th.classList.add("col-jeugd", "name-vertical");
+     headBot.appendChild(th);
+   });
+   
+   leiding.forEach(l => {
+     const th = document.createElement("th");
+     th.textContent = l.naam;
+     th.classList.add("col-leiding", "name-vertical");
+     headBot.appendChild(th);
+   });
+   
 
   /* --- BODY --- */
   let firstFuture = true;
