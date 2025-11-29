@@ -2,90 +2,103 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Jaarplanning – Speltak</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bevers – Jaarplanning</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- JOUW STYLE.CSS -->
+  <link rel="stylesheet" href="style.css">
 
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 6px 8px;
-      text-align: center;
-      vertical-align: middle;
-    }
-
-    th {
-      background: #f2f2f2;
-      font-weight: 600;
-    }
+    /* Kleine aanvullingen op jouw eigen stylesheet */
 
     td.editable:hover {
       background: #fff6cc;
       cursor: text;
     }
 
-    .presence-cell { cursor: pointer; font-size: 18px; }
-    .presence-aanwezig { color: green; font-weight: bold; }
-    .presence-afwezig { color: red; font-weight: bold; }
+    .presence-cell { 
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: bold;
+    }
+    .presence-aanwezig { color: #0b4b26; }
+    .presence-afwezig { color: #c62828; }
 
-    .delete-btn { cursor:pointer; color:#c62828; font-weight:bold; }
+    .delete-btn {
+      cursor: pointer;
+      color: #c62828;
+      font-weight: bold;
+    }
 
     .add-row {
       text-align: left;
       padding: 10px;
       cursor: pointer;
       font-weight: bold;
-      color: #0b4b26;
+      background: #eef9ee;
     }
-    .add-row:hover {
-      background: #e6ffe6;
-    }
+    .add-row:hover { background: #ddf2dd; }
 
-    #editButton {
-      margin-top: 20px;
-      padding: 8px 14px;
-      background: #0b4b26;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #editButton:hover {
-      filter: brightness(0.9);
-    }
-
-    .greyed { background:#eee !important; }
-    .next { background:#d9f7d9 !important; }
-    .bijzonder { background:#fff4bf !important; }
-    .kamp { background:#ffd9b5 !important; }
+    /* Rijkleuren voor opkomsten */
+    .row-grey { background: #e8e8e8 !important; }
+    .row-next { background: #d9f7d9 !important; }
+    .row-bijzonder { background: #fff4bf !important; }
+    .row-kamp { background: #ffd9b5 !important; }
   </style>
 </head>
 
-<body data-speltak="bevers">  
-  <h1 id="title">Jaarplanning</h1>
+<body data-speltak="bevers">
 
-  <button id="editButton">Bewerkmodus</button>
+  <!-- TOPBALK -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <img class="topbar-logo"
+           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
+           alt="OVN logo">
+      <div class="topbar-title">
+        <h1>Bevers – Jaarplanning</h1>
+        <span>Aanwezigheid, planning & overzicht</span>
+      </div>
+    </div>
 
-  <table id="planningTable">
-    <thead>
-      <tr id="headerRowTop"></tr>
-      <tr id="headerRowBottom"></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-    <tfoot>
-      <tr class="add-row" id="addOpkomstRow">
-        <td colspan="999">+ Opkomst toevoegen</td>
-      </tr>
-    </tfoot>
-  </table>
+    <a class="backlink" href="index.html">← Terug</a>
+  </header>
+
+
+  <!-- CONTAINER -->
+  <main class="container">
+
+    <section class="info-block">
+      <h2>Planning</h2>
+      <p>
+        Klik op een vakje om aanwezigheid te wijzigen.<br>
+        In bewerkmodus kun je inline opkomsten aanpassen, toevoegen en verwijderen.
+      </p>
+    </section>
+
+    <!-- BEWERKMODUS ---------------------------------->
+    <button id="editButton" class="edit-button">Bewerkmodus</button>
+
+
+    <!-- TABEL ---------------------------------------->
+    <div class="table-wrapper">
+      <table class="planning-table">
+        <thead>
+          <tr id="headerRowTop"></tr>
+          <tr id="headerRowBottom"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+
+        <tfoot>
+          <tr class="add-row" id="addOpkomstRow">
+            <td colspan="999">+ Opkomst toevoegen</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+  </main>
 
   <script type="module" src="speltak.js"></script>
 </body>
 </html>
-
