@@ -8,16 +8,27 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Bevers – Jaarplanning</h1>
+    <div class="topbar-left">
+      <img
+        class="topbar-logo"
+        src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
+        alt="Logo Scouting Olivier van Noort"
+      >
+      <div class="topbar-title">
+        <h1>Bevers – Jaarplanning</h1>
+        <span>Overzicht opkomsten en aanwezigheid</span>
+      </div>
+    </div>
     <a class="backlink" href="index.html">← Terug naar overzicht</a>
   </header>
 
   <main class="container">
     <section class="info-block">
+      <h2>Bevers</h2>
       <p>
-        Op deze pagina staat de jaarplanning van de Bevers. 
-        Iedereen kan de aanwezigheid aanvinken. 
-        Alleen leiding kan de planning zelf aanpassen via de bewerkmodus (komt later met wachtwoord).
+        Op deze pagina staat de jaarplanning van de Bevers.
+        De tabel wordt gevuld vanuit de Realtime Database. Door op de vakjes te klikken
+        kun je de aanwezigheid per kind aanpassen (– → ✔ → ✖ → –).
       </p>
     </section>
 
@@ -26,50 +37,208 @@
       <div class="table-wrapper">
         <table class="planning-table">
           <thead>
-            <tr>
-              <th>Datum</th>
-              <th>Thema</th>
-              <th>Bijzonderheden</th>
-              <th>Leiding</th>
-              <th>Anna</th>
-              <th>Bram</th>
-              <th>Kim</th>
+            <tr id="planning-head-row">
+              <!-- wordt door JavaScript gevuld -->
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>01-02-2025</td>
-              <td>Indianen</td>
-              <td>Neem regenlaarzen mee</td>
-              <td>Thijmen</td>
-              <td class="presence-cell">–</td>
-              <td class="presence-cell">–</td>
-              <td class="presence-cell">–</td>
-            </tr>
-            <tr>
-              <td>08-02-2025</td>
-              <td>Waterpret</td>
-              <td>Handdoek en zwempak</td>
-              <td>Imme</td>
-              <td class="presence-cell">–</td>
-              <td class="presence-cell">–</td>
-              <td class="presence-cell">–</td>
-            </tr>
+          <tbody id="planning-body">
+            <!-- wordt door JavaScript gevuld -->
           </tbody>
         </table>
       </div>
     </section>
 
     <section class="admin-section">
-      <button id="editModeButton">Bewerkmodus (later met wachtwoord)</button>
+      <button id="editModeButton" disabled>Bewerkmodus (komt later)</button>
       <p class="admin-hint">
-        In een volgende stap maken we hier echte bewerk-knoppen van die alleen beschikbaar zijn
-        na het invoeren van een wachtwoord. Voor nu is dit alleen een placeholder.
+        In een volgende stap voegen we hier een bewerkmodus met wachtwoord toe
+        om nieuwe opkomsten te maken en bestaande aan te passen.
       </p>
     </section>
   </main>
 
-  <!-- Later kun je hier bevers.js includen voor Firebase en kliklogica -->
-  <!-- <script src="bevers.js"></script> -->
+  <!-- Firebase (modulaire SDK, versie 12) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      child,
+      get,
+      update
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+    // JOUW CONFIG (zoals je al had)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZN4QdTuOpk8lEKsyPuhynqZ9-GJLDE0s",
+      authDomain: "jaarplanning-ovn.firebaseapp.com",
+      databaseURL: "https://jaarplanning-ovn-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "jaarplanning-ovn",
+      storageBucket: "jaarplanning-ovn.firebasestorage.app",
+      messagingSenderId: "526104562356",
+      appId: "1:526104562356:web:ea211e722202d6383f65e1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let leden = [];
+    let opkomsten = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadData();
+    });
+
+    async function loadData() {
+      try {
+        const rootRef = ref(db);
+        const snapshot = await get(child(rootRef, "bevers"));
+
+        if (!snapshot.exists()) {
+          console.warn("Geen data gevonden onder /bevers");
+          return;
+        }
+
+        const data = snapshot.val() || {};
+        const ledenObj = data.leden || {};
+        const opkomstenObj = data.opkomsten || {};
+
+        // leden → array met id, naam, volgorde
+        leden = Object.entries(ledenObj).map(([id, value]) => ({
+          id,
+          naam: value.naam || id,
+          volgorde: value.volgorde ?? 0
+        })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
+
+        // opkomsten → array met id + data, gesorteerd op datum (YYYY-MM-DD)
+        opkomsten = Object.entries(opkomstenObj).map(([id, value]) => ({
+          id,
+          datum: value.datum,
+          thema: value.thema || "",
+          bijzonderheden: value.bijzonderheden || "",
+          leiding: value.leiding || "",
+          aanwezigheid: value.aanwezigheid || {}
+        })).sort((a, b) => {
+          if (!a.datum || !b.datum) return 0;
+          return a.datum.localeCompare(b.datum);
+        });
+
+        renderTable();
+      } catch (err) {
+        console.error("Fout bij laden data:", err);
+        alert("Er ging iets mis bij het ophalen van de Bevers-data.");
+      }
+    }
+
+    function renderTable() {
+      const headRow = document.getElementById("planning-head-row");
+      const body = document.getElementById("planning-body");
+
+      headRow.innerHTML = "";
+      body.innerHTML = "";
+
+      // vaste kolommen
+      ["Datum", "Thema", "Bijzonderheden", "Leiding"].forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        headRow.appendChild(th);
+      });
+
+      // leden-kolommen
+      leden.forEach(lid => {
+        const th = document.createElement("th");
+        th.textContent = lid.naam;
+        headRow.appendChild(th);
+      });
+
+      // rijen
+      opkomsten.forEach(opkomst => {
+        const tr = document.createElement("tr");
+
+        addTextCell(tr, formatDate(opkomst.datum));
+        addTextCell(tr, opkomst.thema);
+        addTextCell(tr, opkomst.bijzonderheden);
+        addTextCell(tr, opkomst.leiding);
+
+        leden.forEach(lid => {
+          const td = document.createElement("td");
+          td.classList.add("presence-cell");
+
+          const state = (opkomst.aanwezigheid && opkomst.aanwezigheid[lid.id]) || "onbekend";
+
+          td.dataset.opkomstId = opkomst.id;
+          td.dataset.lidId = lid.id;
+          td.dataset.state = state;
+
+          updatePresenceCellAppearance(td);
+
+          td.addEventListener("click", onPresenceClick);
+
+          tr.appendChild(td);
+        });
+
+        body.appendChild(tr);
+      });
+    }
+
+    function addTextCell(tr, text) {
+      const td = document.createElement("td");
+      td.textContent = text || "";
+      tr.appendChild(td);
+    }
+
+    function formatDate(isoStr) {
+      if (!isoStr) return "";
+      const parts = isoStr.split("-");
+      if (parts.length !== 3) return isoStr;
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-jjjj
+    }
+
+    function updatePresenceCellAppearance(td) {
+      const state = td.dataset.state || "onbekend";
+      td.classList.remove("presence-aanwezig", "presence-afwezig");
+
+      if (state === "aanwezig") {
+        td.textContent = "✔";
+        td.classList.add("presence-aanwezig");
+      } else if (state === "afwezig") {
+        td.textContent = "✖";
+        td.classList.add("presence-afwezig");
+      } else {
+        td.textContent = "–";
+      }
+    }
+
+    async function onPresenceClick(event) {
+      const td = event.currentTarget;
+      const current = td.dataset.state || "onbekend";
+      let next;
+
+      if (current === "onbekend") {
+        next = "aanwezig";
+      } else if (current === "aanwezig") {
+        next = "afwezig";
+      } else {
+        next = "onbekend";
+      }
+
+      td.dataset.state = next;
+      updatePresenceCellAppearance(td);
+
+      const opkomstId = td.dataset.opkomstId;
+      const lidId = td.dataset.lidId;
+
+      const aanwezigheidRef = ref(db, `bevers/opkomsten/${opkomstId}/aanwezigheid`);
+
+      try {
+        await update(aanwezigheidRef, {
+          [lidId]: next
+        });
+      } catch (err) {
+        console.error("Fout bij opslaan aanwezigheid:", err);
+        alert("Opslaan van aanwezigheid is mislukt.");
+      }
+    }
+  </script>
 </body>
 </html>
