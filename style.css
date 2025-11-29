@@ -245,4 +245,69 @@ body {
     min-width: 550px;
   }
 }
+.hidden {
+  display: none;
+}
+
+.admin-members {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-members h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.members-list {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.member-row {
+  padding: 0.15rem 0;
+}
+
+.add-member-form .form-row {
+  margin-bottom: 0.5rem;
+}
+
+.add-member-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+.add-member-form input,
+.add-member-form select {
+  margin-top: 0.2rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.add-member-form button[type="submit"] {
+  padding: 0.4rem 0.9rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: var(--yellow);
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.add-member-form button[type="submit"]:hover {
+  filter: brightness(0.95);
+}
+
+/* optioneel, als je deze nog niet had */
+.presence-aanwezig {
+  background: #e3f7e3 !important;
+}
+
+.presence-afwezig {
+  background: #fde0e0 !important;
+}
 
