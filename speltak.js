@@ -300,4 +300,63 @@ function createPresenceCell(o, lidId) {
 
   if (isAdmin) {
     td.onclick = async () => {
-      const next = state ==
+      const next = state === "onbekend" ? "aanwezig" :
+                   state === "aanwezig"  ? "afwezig" : "onbekend";
+
+      await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
+        [lidId]: next
+      });
+      loadData();
+    };
+  }
+
+  return td;
+}
+
+/* ---------------------------------------------------
+   OPSLAAN VAN VELD
+--------------------------------------------------- */
+async function saveField(opkomst, field, value) {
+  await update(ref(db, `${speltak}/opkomsten/${opkomst.id}`), {
+    [field]: value
+  });
+}
+
+/* ---------------------------------------------------
+   VERWIJDEREN
+--------------------------------------------------- */
+async function deleteOpkomst(id) {
+  if (!confirm("Weet je zeker dat je dit wilt verwijderen?")) return;
+  await remove(ref(db, `${speltak}/opkomsten/${id}`));
+  loadData();
+}
+
+/* ---------------------------------------------------
+   NIEUWE OPNKOMST VIA + RIJ
+--------------------------------------------------- */
+document.getElementById("addOpkomstRow").onclick = () => {
+  if (!isAdmin) return;
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const nieuw = {
+    datum: today,
+    thema: "",
+    bijzonderheden: "",
+    starttijd: "10:30",
+    eindtijd: "12:30",
+    procor: "",
+    bert_met: "",
+    typeOpkomst: "normaal",
+    aanwezigheid: {}
+  };
+
+  jeugd.forEach(j => nieuw.aanwezigheid[j.id] = "onbekend");
+  leiding.forEach(l => nieuw.aanwezigheid["leiding-"+l.id] = "onbekend");
+
+  set(
+    ref(db, `${speltak}/opkomsten/${today}-${Date.now()}`),
+    nieuw
+  ).then(loadData);
+};
+
