@@ -1,3 +1,6 @@
+/* -----------------------------------------------------
+   FIREBASE
+----------------------------------------------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import {
   getDatabase,
@@ -9,9 +12,6 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-/* ---------------------------------------------------
-   FIREBASE CONFIG
---------------------------------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyAZN4QdTuOpk8lEKsyPuhynqZ9-GJLDE0s",
   authDomain: "jaarplanning-ovn.firebaseapp.com",
@@ -25,85 +25,73 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ---------------------------------------------------
+/* -----------------------------------------------------
    VARIABELEN
---------------------------------------------------- */
-
-let isAdmin = false;
+----------------------------------------------------- */
 let speltak = "";
 let leden = [];
 let jeugd = [];
 let leiding = [];
 let opkomsten = [];
-let vandaagISO = new Date().toISOString().split("T")[0];
+let isAdmin = false;
 
-document.addEventListener("DOMContentLoaded", start);
+const todayISO = new Date().toISOString().split("T")[0];
 
-async function start() {
+/* -----------------------------------------------------
+   START
+----------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
   speltak = document.body.dataset.speltak;
-  document.getElementById("editButton").addEventListener("click", toggleAdmin);
+  document.getElementById("editButton").onclick = toggleAdmin;
+  document.getElementById("addOpkomstRow").onclick = addNewOpkomst;
 
   loadData();
+});
+
+/* -----------------------------------------------------
+   LAAD ALLE DATA
+----------------------------------------------------- */
+async function loadData() {
+  const snap = await get(child(ref(db), speltak));
+  if (!snap.exists()) return;
+
+  const data = snap.val();
+
+  leden = Object.entries(data.leden || {}).map(([id, v]) => ({
+    id,
+    naam: v.naam,
+    type: v.type,
+    volgorde: v.volgorde || 0
+  }));
+
+  jeugd = leden.filter(l => l.type === "jeugd").sort((a,b)=>a.volgorde-b.volgorde);
+  leiding = leden.filter(l => l.type === "leiding").sort((a,b)=>a.volgorde-b.volgorde);
+
+  opkomsten = Object.entries(data.opkomsten || {}).map(([id,v]) => ({ id, ...v }));
+
+  // Sorteren op datum
+  opkomsten.sort((a,b)=>a.datum.localeCompare(b.datum));
+
+  renderTable();
 }
 
-/* ---------------------------------------------------
+/* -----------------------------------------------------
    ADMIN MODUS
---------------------------------------------------- */
-
+----------------------------------------------------- */
 function toggleAdmin() {
   if (!isAdmin) {
     const pw = prompt("Wachtwoord:");
-    if (pw === "bevers2025") {
-      isAdmin = true;
-    } else { return alert("Fout wachtwoord."); }
+    if (pw !== "bevers2025") return alert("Incorrect wachtwoord.");
+    isAdmin = true;
   } else {
     isAdmin = false;
   }
   renderTable();
 }
 
-/* ---------------------------------------------------
-   DATA LADEN
---------------------------------------------------- */
-
-async function loadData() {
-  const snap = await get(child(ref(db), speltak));
-  if (!snap.exists()) return;
-
-  let data = snap.val();
-
-  leden = Object.entries(data.leden || {}).map(([id, v]) => ({
-    id, naam: v.naam, type: v.type, volgorde: v.volgorde
-  }));
-
-  jeugd = leden.filter(l => l.type === "jeugd").sort((a,b)=>a.volgorde-b.volgorde);
-  leiding = leden.filter(l => l.type === "leiding").sort((a,b)=>a.volgorde-b.volgorde);
-
-  opkomsten = Object.entries(data.opkomsten || {}).map(([id, v]) => ({
-    id, ...v
-  }));
-
-  sortOpkomsten();
-  renderTable();
-}
-
-/* ---------------------------------------------------
-   SORTEREN OPNKOMSTEN
---------------------------------------------------- */
-function sortOpkomsten() {
-  const toekomst = opkomsten.filter(o => o.datum >= vandaagISO);
-  const verleden = opkomsten.filter(o => o.datum < vandaagISO);
-
-  toekomst.sort((a,b)=>a.datum.localeCompare(b.datum));
-  verleden.sort((a,b)=>a.datum.localeCompare(b.datum));
-
-  opkomsten = [...toekomst, ...verleden];
-}
-
-/* ---------------------------------------------------
-   TABEL RENDEREN
---------------------------------------------------- */
-
+/* -----------------------------------------------------
+   TABEL BOUWEN
+----------------------------------------------------- */
 function renderTable() {
   const headTop = document.getElementById("headerRowTop");
   const headBot = document.getElementById("headerRowBottom");
@@ -113,9 +101,8 @@ function renderTable() {
   headBot.innerHTML = "";
   body.innerHTML = "";
 
-  /* -------- HEADER ROWN 1 (SUBHEADERS) -------- */
+  /* ------------------- HEADER (rij 1) ------------------- */
   addTH(headTop, "🗑", 1, 2);
-
   addTH(headTop, "Datum", 1, 2);
   addTH(headTop, "Thema", 1, 2);
   addTH(headTop, "Bijzonderheden", 1, 2);
@@ -127,28 +114,24 @@ function renderTable() {
   addTH(headTop, "JEUGD", jeugd.length, 1);
   addTH(headTop, "LEIDING", leiding.length, 1);
 
-  /* -------- HEADER ROW 2 (NAMEN) -------- */
-  addTH(headBot, "");  // prullenbak
-  addTH(headBot, "");  // datum
-  addTH(headBot, "");  // thema
-  addTH(headBot, "");  // bijz
-  addTH(headBot, "");  // start
-  addTH(headBot, "");  // eind
-  addTH(headBot, "");  // procor
-  addTH(headBot, "");  // bert
+  /* ------------------- HEADER (rij 2) ------------------- */
+  const empties = 8;
+  for (let i=0;i<empties;i++) addTH(headBot, "");
 
-  jeugd.forEach(l => addTH(headBot, l.naam));
+  jeugd.forEach(j => addTH(headBot, j.naam));
   leiding.forEach(l => addTH(headBot, l.naam));
 
-  /* -------- BODY ROWS -------- */
-  opkomsten.forEach((o, index) => {
+  /* ------------------- BODY ------------------- */
+  let firstFuture = true;
+
+  opkomsten.forEach(o => {
     const tr = document.createElement("tr");
 
-    // kleur
-    if (o.datum < vandaagISO) tr.classList.add("greyed");
-    else if (index === 0) tr.classList.add("next");
-    if (o.typeOpkomst === "bijzonder") tr.classList.add("bijzonder");
-    if (o.typeOpkomst === "kamp") tr.classList.add("kamp");
+    // kleuring
+    if (o.datum < todayISO) tr.classList.add("row-grey");
+    else if (firstFuture) { tr.classList.add("row-next"); firstFuture = false; }
+    if (o.typeOpkomst === "bijzonder") tr.classList.add("row-bijzonder");
+    if (o.typeOpkomst === "kamp") tr.classList.add("row-kamp");
 
     /* DELETE BTN */
     const del = document.createElement("td");
@@ -157,80 +140,84 @@ function renderTable() {
     if (isAdmin) del.onclick = () => deleteOpkomst(o.id);
     tr.appendChild(del);
 
-    /* INLINE CEL FUNCTIE */
+    /* INLINE TEXT CEL -------------------------------------------------- */
     const addEditable = (value, field, type="text") => {
       const td = document.createElement("td");
       td.textContent = value || "";
       if (isAdmin) {
         td.classList.add("editable");
-        td.onclick = () => editCell(td, o, field, type);
+        td.onclick = () => editTextCell(td, o, field, type);
       }
       tr.appendChild(td);
     };
 
     addEditable(o.datum, "datum", "date");
-    addEditable(o.thema, "thema", "text");
-    addEditable(o.bijzonderheden, "bijzonderheden", "text");
+    addEditable(o.thema, "thema");
+    addEditable(o.bijzonderheden, "bijzonderheden");
     addEditable(o.starttijd, "starttijd", "time");
     addEditable(o.eindtijd, "eindtijd", "time");
 
-    /* PROCOR (dropdown) */
+    /* PROCOR DROPDOWN -------------------------------------------------- */
     const tdProcor = document.createElement("td");
     tdProcor.textContent = getNaam(o.procor) || "";
-    if (isAdmin) tdProcor.onclick = () => editProcor(tdProcor, o);
+    if (isAdmin) tdProcor.onclick = () => editProcorCell(tdProcor, o);
     tr.appendChild(tdProcor);
 
-    /* BERT (dropdown jeugd) */
+    /* BERT DROPDOWN ------------------------------------------------------ */
     const tdBert = document.createElement("td");
     tdBert.textContent = getNaam(o.bert_met) || "";
-    if (isAdmin) tdBert.onclick = () => editBert(tdBert, o);
+    if (isAdmin) tdBert.onclick = () => editBertCell(tdBert, o);
     tr.appendChild(tdBert);
 
-    /* JEUGD aanwezigheid */
-    jeugd.forEach(l => tr.appendChild(createPresenceCell(o, l.id)));
-
-    /* LEIDING aanwezigheid */
-    leiding.forEach(l => {
-      tr.appendChild(createPresenceCell(o, "leiding-"+l.id));
-    });
+    /* AANWEZIGHEID -------------------------------------------------------- */
+    jeugd.forEach(j => tr.appendChild(makePresenceCell(o, j.id)));
+    leiding.forEach(l => tr.appendChild(makePresenceCell(o, "leiding-"+l.id)));
 
     body.appendChild(tr);
   });
 }
 
-/* ---------------------------------------------------
-   HEADER HELPER
---------------------------------------------------- */
+/* -----------------------------------------------------
+   HELPERS
+----------------------------------------------------- */
 function addTH(row, text, colspan=1, rowspan=1) {
   const th = document.createElement("th");
-  th.textContent = text;
   th.colSpan = colspan;
   th.rowSpan = rowspan;
+  th.textContent = text;
   row.appendChild(th);
 }
 
-/* ---------------------------------------------------
-   INLINE EDITING
---------------------------------------------------- */
+function getNaam(id) {
+  if (!id) return "";
+  const f = leden.find(l => l.id === id);
+  return f ? f.naam : "";
+}
 
-function editCell(td, opkomst, field, type) {
-  const oldVal = td.textContent;
+/* -----------------------------------------------------
+   INLINE TEXT EDIT
+----------------------------------------------------- */
+function editTextCell(td, opkomst, field, type) {
+  const old = td.textContent;
   const input = document.createElement("input");
   input.type = type;
-  input.value = oldVal;
+  input.value = old;
   td.textContent = "";
   td.appendChild(input);
   input.focus();
 
   input.onblur = async () => {
-    let val = input.value;
-    if (field === "datum" && val.length === 10) {
-      await saveField(opkomst, field, val);
-      loadData();
+    const val = input.value;
+
+    if (field === "datum") {
+      await moveOpkomst(opkomst, val);
     } else {
-      await saveField(opkomst, field, val);
-      td.textContent = val;
+      await update(ref(db, `${speltak}/opkomsten/${opkomst.id}`), {
+        [field]: val
+      });
     }
+
+    loadData();
   };
 
   input.onkeydown = e => {
@@ -238,74 +225,72 @@ function editCell(td, opkomst, field, type) {
   };
 }
 
-/* ---------------------------------------------------
+/* -----------------------------------------------------
    PROCOR DROPDOWN
---------------------------------------------------- */
-function editProcor(td, o) {
-  const select = document.createElement("select");
+----------------------------------------------------- */
+function editProcorCell(td, o) {
+  const sel = document.createElement("select");
+  sel.innerHTML = `<option value=""></option>` +
+    leiding.map(l=>`<option value="${l.id}">${l.naam}</option>`).join("");
 
-  select.innerHTML = `<option value=""></option>` +
-    leiding.map(l => `<option value="${l.id}">${l.naam}</option>`).join("");
-
-  select.value = o.procor || "";
+  sel.value = o.procor || "";
   td.textContent = "";
-  td.appendChild(select);
-  select.focus();
+  td.appendChild(sel);
+  sel.focus();
 
-  select.onblur = async () => {
-    await saveField(o, "procor", select.value);
-    loadData();    
-  };
-}
-
-/* ---------------------------------------------------
-   BERT DROPDOWN
---------------------------------------------------- */
-function editBert(td, o) {
-  const select = document.createElement("select");
-
-  select.innerHTML = `<option value=""></option>` +
-    jeugd.map(l => `<option value="${l.id}">${l.naam}</option>`).join("");
-
-  select.value = o.bert_met || "";
-  td.textContent = "";
-  td.appendChild(select);
-  select.focus();
-
-  select.onblur = async () => {
-    await saveField(o, "bert_met", select.value);
+  sel.onblur = async () => {
+    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+      procor: sel.value
+    });
     loadData();
   };
 }
 
-/* ---------------------------------------------------
-   HELPERS
---------------------------------------------------- */
-function getNaam(id) {
-  if (!id) return "";
-  const l = leden.find(x => x.id === id);
-  return l ? l.naam : "";
+/* -----------------------------------------------------
+   BERT DROPDOWN
+----------------------------------------------------- */
+function editBertCell(td, o) {
+  const sel = document.createElement("select");
+  sel.innerHTML = `<option value=""></option>` +
+    jeugd.map(j=>`<option value="${j.id}">${j.naam}</option>`).join("");
+
+  sel.value = o.bert_met || "";
+  td.textContent = "";
+  td.appendChild(sel);
+  sel.focus();
+
+  sel.onblur = async () => {
+    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+      bert_met: sel.value
+    });
+    loadData();
+  };
 }
 
-/* ---------------------------------------------------
+/* -----------------------------------------------------
    AANWEZIGHEID
---------------------------------------------------- */
-function createPresenceCell(o, lidId) {
+----------------------------------------------------- */
+function makePresenceCell(o, lidId) {
+  if (!o.aanwezigheid) o.aanwezigheid = {};
+  if (!o.aanwezigheid[lidId]) o.aanwezigheid[lidId] = "onbekend";
+
   const td = document.createElement("td");
   td.classList.add("presence-cell");
 
-  const state = o.aanwezigheid?.[lidId] || "onbekend";
+  const state = o.aanwezigheid[lidId];
+
   td.textContent = state === "aanwezig" ? "✔" :
-                   state === "afwezig"  ? "✖" : "–";
+                   state === "afwezig" ? "✖" : "–";
 
   if (isAdmin) {
     td.onclick = async () => {
       const next = state === "onbekend" ? "aanwezig" :
-                   state === "aanwezig"  ? "afwezig" : "onbekend";
+                   state === "aanwezig" ? "afwezig" : "onbekend";
 
       await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
         [lidId]: next
       });
+
       loadData();
     };
   }
@@ -313,34 +298,40 @@ function createPresenceCell(o, lidId) {
   return td;
 }
 
-/* ---------------------------------------------------
-   OPSLAAN VAN VELD
---------------------------------------------------- */
-async function saveField(opkomst, field, value) {
-  await update(ref(db, `${speltak}/opkomsten/${opkomst.id}`), {
-    [field]: value
-  });
+/* -----------------------------------------------------
+   DATUM WIJZIGEN (VERPLAATS KEY)
+----------------------------------------------------- */
+async function moveOpkomst(o, newDate) {
+  const oldPath = `${speltak}/opkomsten/${o.id}`;
+  const newId = `${newDate}`;
+
+  const clone = {...o, datum: newDate};
+
+  await set(ref(db, `${speltak}/opkomsten/${newId}`), clone);
+  await remove(ref(db, oldPath));
 }
 
-/* ---------------------------------------------------
+/* -----------------------------------------------------
    VERWIJDEREN
---------------------------------------------------- */
+----------------------------------------------------- */
 async function deleteOpkomst(id) {
-  if (!confirm("Weet je zeker dat je dit wilt verwijderen?")) return;
+  if (!confirm("Weet je zeker dat je deze opkomst wilt verwijderen?")) return;
   await remove(ref(db, `${speltak}/opkomsten/${id}`));
   loadData();
 }
 
-/* ---------------------------------------------------
-   NIEUWE OPNKOMST VIA + RIJ
---------------------------------------------------- */
-document.getElementById("addOpkomstRow").onclick = () => {
+/* -----------------------------------------------------
+   NIEUWE OPNKOMST
+----------------------------------------------------- */
+async function addNewOpkomst() {
   if (!isAdmin) return;
 
-  const today = new Date().toISOString().split("T")[0];
+  const now = Date.now();
+  const id = `opk-${now}`;
+  const datum = todayISO;
 
   const nieuw = {
-    datum: today,
+    datum,
     thema: "",
     bijzonderheden: "",
     starttijd: "10:30",
@@ -354,9 +345,7 @@ document.getElementById("addOpkomstRow").onclick = () => {
   jeugd.forEach(j => nieuw.aanwezigheid[j.id] = "onbekend");
   leiding.forEach(l => nieuw.aanwezigheid["leiding-"+l.id] = "onbekend");
 
-  set(
-    ref(db, `${speltak}/opkomsten/${today}-${Date.now()}`),
-    nieuw
-  ).then(loadData);
-};
+  await set(ref(db, `${speltak}/opkomsten/${id}`), nieuw);
 
+  loadData();
+}
