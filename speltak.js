@@ -77,24 +77,13 @@ async function loadData() {
   const snap = await get(child(ref(db), speltak));
   const data = snap.exists() ? snap.val() : { leden: {}, opkomsten: {} };
 
-  // Typen normaliseren → jeugdlid/jeugd/lid => jeugd, leiding/leider/coach => leiding
-  leden = Object.entries(data.leden || {}).map(([id, v]) => {
-    let type = (v.type || "").toLowerCase().trim();
-
-    if (type === "jeugdlid" || type === "jeugd" || type === "lid") {
-      type = "jeugd";
-    }
-    if (type === "leiding" || type === "leider" || type === "coach") {
-      type = "leiding";
-    }
-
-    return {
-      id,
-      naam: v.naam,
-      type,
-      volgorde: v.volgorde || 0
-    };
-  });
+  // Eenvoudig: neem opgeslagen type direct over ("jeugd" of "leiding")
+  leden = Object.entries(data.leden || {}).map(([id, v]) => ({
+    id,
+    naam: v.naam,
+    type: v.type || "jeugd",
+    volgorde: v.volgorde || 0
+  }));
 
   jeugd = leden.filter(l => l.type === "jeugd").sort((a, b) => a.volgorde - b.volgorde);
   leiding = leden.filter(l => l.type === "leiding").sort((a, b) => a.volgorde - b.volgorde);
@@ -342,6 +331,7 @@ function makePresenceCell(o, key) {
       ? "✖"
       : "–";
 
+  // Altijd klikbaar (ouders moeten dit kunnen invullen)
   td.onclick = async () => {
     const next =
       state === "onbekend"
@@ -403,6 +393,64 @@ async function addNewOpkomst() {
 }
 
 /* -----------------------------------------------------
+   LIDTYPE KIEZEN (OVERLAY MET RADIOBUTTONS)
+----------------------------------------------------- */
+function chooseMemberType() {
+  return new Promise(resolve => {
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.background = "rgba(0,0,0,0.4)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = "9999";
+
+    const box = document.createElement("div");
+    box.style.background = "white";
+    box.style.padding = "16px 20px";
+    box.style.borderRadius = "8px";
+    box.style.minWidth = "260px";
+    box.style.boxShadow = "0 4px 12px rgba(0,0,0,0.25)";
+    box.innerHTML = `
+      <h3 style="margin-top:0;">Type lid</h3>
+      <p>Is dit een jeugdlid of leiding?</p>
+      <label style="display:block;margin:4px 0;">
+        <input type="radio" name="lidtype" value="jeugd" checked>
+        Jeugdlid
+      </label>
+      <label style="display:block;margin:4px 0;">
+        <input type="radio" name="lidtype" value="leiding">
+        Leiding
+      </label>
+      <div style="margin-top:12px;text-align:right;">
+        <button type="button" id="cancelTypeBtn" style="margin-right:8px;">Annuleer</button>
+        <button type="button" id="okTypeBtn">OK</button>
+      </div>
+    `;
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const cleanup = () => {
+      document.body.removeChild(overlay);
+    };
+
+    box.querySelector("#cancelTypeBtn").onclick = () => {
+      cleanup();
+      resolve(null);
+    };
+
+    box.querySelector("#okTypeBtn").onclick = () => {
+      const checked = box.querySelector('input[name="lidtype"]:checked');
+      const val = checked ? checked.value : null;
+      cleanup();
+      resolve(val);
+    };
+  });
+}
+
+/* -----------------------------------------------------
    LID TOEVOEGEN
 ----------------------------------------------------- */
 async function addNewMember() {
@@ -411,13 +459,8 @@ async function addNewMember() {
   const naam = prompt("Naam lid:");
   if (!naam) return;
 
-  const isLeiding = confirm(
-    "Is dit een leidinglid?\n\n" +
-    "• Klik OK voor: LEIDING\n" +
-    "• Klik Annuleren voor: JEUGDLID"
-  );
-
-  const type = isLeiding ? "leiding" : "jeugd";
+  const type = await chooseMemberType();
+  if (!type) return; // geannuleerd
 
   const id = push(ref(db, `${speltak}/leden`)).key;
 
