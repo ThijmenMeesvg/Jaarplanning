@@ -77,12 +77,24 @@ async function loadData() {
   const snap = await get(child(ref(db), speltak));
   const data = snap.exists() ? snap.val() : { leden: {}, opkomsten: {} };
 
-  leden = Object.entries(data.leden || {}).map(([id, v]) => ({
-    id,
-    naam: v.naam,
-    type: v.type === "jeugdlid" ? "jeugd" : v.type,
-    volgorde: v.volgorde || 0
-  }));
+  // Typen normaliseren → jeugdlid/jeugd/lid => jeugd, leiding/leider/coach => leiding
+  leden = Object.entries(data.leden || {}).map(([id, v]) => {
+    let type = (v.type || "").toLowerCase().trim();
+
+    if (type === "jeugdlid" || type === "jeugd" || type === "lid") {
+      type = "jeugd";
+    }
+    if (type === "leiding" || type === "leider" || type === "coach") {
+      type = "leiding";
+    }
+
+    return {
+      id,
+      naam: v.naam,
+      type,
+      volgorde: v.volgorde || 0
+    };
+  });
 
   jeugd = leden.filter(l => l.type === "jeugd").sort((a, b) => a.volgorde - b.volgorde);
   leiding = leden.filter(l => l.type === "leiding").sort((a, b) => a.volgorde - b.volgorde);
@@ -131,8 +143,12 @@ function renderTable() {
 
     const tr = document.createElement("tr");
 
-    if (opkomst.datum < todayISO) tr.classList.add("row-grey");
-    else if (firstFuture) { tr.classList.add("row-next"); firstFuture = false; }
+    if (opkomst.datum < todayISO) {
+      tr.classList.add("row-grey");
+    } else if (firstFuture) {
+      tr.classList.add("row-next");
+      firstFuture = false;
+    }
 
     addDeleteCell(tr, opkomst);
 
@@ -219,6 +235,10 @@ function editText(td, o, field, type) {
 
     loadData();
   };
+
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") input.blur();
+  };
 }
 
 /* -----------------------------------------------------
@@ -226,7 +246,8 @@ function editText(td, o, field, type) {
 ----------------------------------------------------- */
 function addProcorCell(tr, o) {
   const td = document.createElement("td");
-  td.textContent = getNaam(o.procor);
+  const label = o.procor ? getNaam(o.procor) : (isAdmin ? "(kies Procor)" : "");
+  td.textContent = label;
 
   if (isAdmin) {
     td.classList.add("editable");
@@ -239,7 +260,7 @@ function addProcorCell(tr, o) {
 function editProcor(td, o) {
   const sel = document.createElement("select");
   sel.innerHTML =
-    `<option value=""></option>` +
+    `<option value="">(kies Procor)</option>` +
     leiding.map(l => `<option value="${l.id}">${l.naam}</option>`).join("");
 
   sel.value = o.procor || "";
@@ -258,7 +279,8 @@ function editProcor(td, o) {
 ----------------------------------------------------- */
 function addBertCell(tr, o) {
   const td = document.createElement("td");
-  td.textContent = getNaam(o.bert_met);
+  const label = o.bert_met ? getNaam(o.bert_met) : (isAdmin ? "(kies Bert)" : "");
+  td.textContent = label;
 
   if (isAdmin) {
     td.classList.add("editable");
@@ -272,7 +294,7 @@ function editBert(td, o) {
   const sel = document.createElement("select");
 
   sel.innerHTML =
-    `<option value=""></option>` +
+    `<option value="">(kies Bert)</option>` +
     jeugd.map(j => `<option value="${j.id}">${j.naam}</option>`).join("");
 
   sel.value = o.bert_met || "";
@@ -389,15 +411,13 @@ async function addNewMember() {
   const naam = prompt("Naam lid:");
   if (!naam) return;
 
-  let type = prompt("Type? (jeugd / leiding)", "jeugd");
-  if (!type) return;
+  const isLeiding = confirm(
+    "Is dit een leidinglid?\n\n" +
+    "• Klik OK voor: LEIDING\n" +
+    "• Klik Annuleren voor: JEUGDLID"
+  );
 
-  type = type.toLowerCase();
-
-  if (type !== "jeugd" && type !== "leiding") {
-    alert("Type moet 'jeugd' of 'leiding' zijn.");
-    return;
-  }
+  const type = isLeiding ? "leiding" : "jeugd";
 
   const id = push(ref(db, `${speltak}/leden`)).key;
 
@@ -407,7 +427,7 @@ async function addNewMember() {
     volgorde: leden.length + 1
   });
 
-  // aanwezigheid aanvullen
+  // Aanwezigheid voor alle bestaande opkomsten aanvullen
   for (const o of opkomsten) {
     if (type === "leiding") {
       await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
@@ -421,6 +441,15 @@ async function addNewMember() {
   }
 
   loadData();
+}
+
+/* -----------------------------------------------------
+   NAAM HELPER
+----------------------------------------------------- */
+function getNaam(id) {
+  if (!id) return "";
+  const f = leden.find(l => l.id === id);
+  return f ? f.naam : "";
 }
 
 /* -----------------------------------------------------
