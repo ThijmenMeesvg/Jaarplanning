@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Jaarplanning – Speltak</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f2f2f2;
+      font-weight: 600;
+    }
+
+    td.editable:hover {
+      background: #fff6cc;
+      cursor: text;
+    }
+
+    .presence-cell { cursor: pointer; font-size: 18px; }
+    .presence-aanwezig { color: green; font-weight: bold; }
+    .presence-afwezig { color: red; font-weight: bold; }
+
+    .delete-btn { cursor:pointer; color:#c62828; font-weight:bold; }
+
+    .add-row {
+      text-align: left;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #0b4b26;
+    }
+    .add-row:hover {
+      background: #e6ffe6;
+    }
+
+    #editButton {
+      margin-top: 20px;
+      padding: 8px 14px;
+      background: #0b4b26;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #editButton:hover {
+      filter: brightness(0.9);
+    }
+
+    .greyed { background:#eee !important; }
+    .next { background:#d9f7d9 !important; }
+    .bijzonder { background:#fff4bf !important; }
+    .kamp { background:#ffd9b5 !important; }
+  </style>
+</head>
+
+<body data-speltak="bevers">  
+  <h1 id="title">Jaarplanning</h1>
+
+  <button id="editButton">Bewerkmodus</button>
+
+  <table id="planningTable">
+    <thead>
+      <tr id="headerRowTop"></tr>
+      <tr id="headerRowBottom"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+    <tfoot>
+      <tr class="add-row" id="addOpkomstRow">
+        <td colspan="999">+ Opkomst toevoegen</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <script type="module" src="speltak.js"></script>
+</body>
+</html>
