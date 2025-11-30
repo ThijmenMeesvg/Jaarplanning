@@ -307,6 +307,10 @@ function renderTable() {
         const td=makePresenceCell(o,key,"leiding");
         if (idx===0) td.classList.add("col-split");
         tr.appendChild(td);
+        if (display !== "!" && td.classList.contains("presence-reminder")) {
+        td.classList.remove("presence-reminder");
+}
+
       }
     });
 
