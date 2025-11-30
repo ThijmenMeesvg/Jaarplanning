@@ -225,9 +225,8 @@ function renderTable() {
   addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
   addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
   addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
-    addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
 
-      /* ---- JEUGD-KOLOMMEN + ZEBRA ---- */
+  /* ---- JEUGD-KOLOMMEN + ZEBRA ---- */
       zichtbareJeugd.forEach(j => {
         const th = document.createElement("th");
         th.textContent = j.naam;
