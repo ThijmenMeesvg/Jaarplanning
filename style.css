@@ -79,7 +79,7 @@ body {
   transition: 0.25s;
 }
 
-/* Pastel kleuren */
+/* Pastel kleuren per speltak */
 .speltak-card.bevers { background: var(--bevers-bg); border-color: var(--bevers-border); }
 .speltak-card.welpen { background: var(--welpen-bg); border-color: var(--welpen-border); }
 .speltak-card.scouts { background: var(--scouts-bg); border-color: var(--scouts-border); }
@@ -112,9 +112,29 @@ body {
   margin-bottom: 1.5rem;
 }
 
+#infotekst {
+  white-space: pre-line;
+}
+
 .info-block textarea {
   width: 100%;
   height: 120px;
+}
+
+.save-info-btn {
+  margin-top: 0.5rem;
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.planning-header-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .edit-button, .add-member-btn, .print-button {
@@ -130,6 +150,11 @@ body {
   display: flex;
   gap: 0.6rem;
   margin-bottom: 1rem;
+  align-items: center;
+}
+
+.print-button {
+  margin-left: auto;
 }
 
 .planning-controls button.active {
@@ -160,12 +185,12 @@ body {
   transform: rotate(180deg);
 }
 
-/* Scheidingslijn */
+/* Scheidingslijn leiding */
 .col-split {
   border-left: 3px solid #444 !important;
 }
 
-/* Zebra striping */
+/* Zebra striping alleen in aanwezigheidsgedeelte */
 .presence-col:nth-of-type(even) {
   background: rgba(0,0,0,0.05);
 }
@@ -175,9 +200,26 @@ body {
 .presence-afwezig  { background: #fde0e0 !important; }
 .presence-reminder { background: #fff4c2 !important; }
 
+/* Opkomst-rij kleuren */
+.row-grey      { background: #eeeeee !important; }
+.row-next      { background: #d9f7d9 !important; }
+.row-bijzonder { background: #fff4bf !important; }
+.row-kamp      { background: #ffd9b5 !important; }
+
 /* ---------------------------------------
    LEDENBEHEER
 --------------------------------------- */
+
+.ledenbeheer-columns {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.ledenbeheer-columns > div {
+  flex: 1;
+  min-width: 220px;
+}
 
 .ledenbeheer ul {
   list-style: none;
@@ -192,6 +234,7 @@ body {
   border: 1px solid #ccc;
   margin-bottom: 6px;
   border-radius: 6px;
+  align-items: center;
 }
 
 .lid-verborgen {
@@ -199,7 +242,18 @@ body {
   font-style: italic;
 }
 
-.hidden { display: none !important; }
+.ledenbeheer-btn {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 0.8rem;
+}
+
+.hidden {
+  display: none !important;
+}
 
 /* ---------------------------------------
    PRINT VIEW
@@ -207,11 +261,24 @@ body {
 
 @media print {
 
-  header, .edit-button, .add-member-btn, .planning-controls,
-  .ledenbeheer, #addOpkomstRow, textarea, .save-info-btn {
+  header,
+  .edit-button,
+  .add-member-btn,
+  .planning-controls,
+  .ledenbeheer,
+  #addOpkomstRow,
+  textarea,
+  .save-info-btn {
     display: none !important;
   }
 
+  /* Verberg delete-kolom */
+  .planning-table th:first-child,
+  .planning-table td:first-child {
+    display: none !important;
+  }
+
+  /* Verberg alles na kolom 8 (Datum t/m Locatie blijven over) */
   .planning-table th:nth-child(n+9),
   .planning-table td:nth-child(n+9) {
     display: none !important;
