@@ -180,7 +180,6 @@ async function loadData() {
 async function saveInfo() {
   const txt = document.getElementById("infotekst_edit").value;
   await update(ref(db, speltak), { info: txt });
-  normalizeOrder(type);
   infotekst = txt;
   document.getElementById("infotekst").textContent = txt;
 }
