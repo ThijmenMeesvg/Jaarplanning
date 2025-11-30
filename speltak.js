@@ -60,7 +60,6 @@ let meldingenInstellingen = {
 ----------------------------------------------------- */
 
 const headerRowTop    = document.getElementById("headerRowTop");
-const headerRowBottom = document.getElementById("headerRowBottom");
 const tableBody       = document.getElementById("tableBody");
 const addOpkomstRow   = document.getElementById("addOpkomstRow");
 
@@ -204,7 +203,6 @@ function addTH(row, text, rowSpan = 1, colSpan = 1, extra = "") {
 
 function renderTable() {
   clearNode(headerRowTop);
-  clearNode(headerRowBottom);
   clearNode(tableBody);
 
   const zichtbareJeugd = jeugd.filter(j => !j.verborgen);
@@ -224,8 +222,8 @@ function renderTable() {
 
   addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
   addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
-  addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
-
+  addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");  
+  
   /* ---- JEUGD-KOLOMMEN + ZEBRA ---- */
       zichtbareJeugd.forEach(j => {
         const th = document.createElement("th");
