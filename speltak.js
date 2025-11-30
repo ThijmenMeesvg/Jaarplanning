@@ -132,7 +132,7 @@ async function loadData() {
   // Opkomsten
   opkomsten = Object.entries(data.opkomsten || {}).map(([id,v])=>({ id, ...v }));
 
-  // Sorteren
+  // Sorteren: eerst toekomst, dan verleden
   const toekomst = opkomsten.filter(o=>o.datum>=todayISO).sort((a,b)=>a.datum.localeCompare(b.datum));
   const verleden = opkomsten.filter(o=>o.datum<todayISO).sort((a,b)=>a.datum.localeCompare(b.datum));
   opkomsten = [...toekomst, ...verleden];
@@ -202,6 +202,7 @@ function renderTable() {
 
   if (isAdmin) addTH(headTop, "Procor",1,2);
 
+  addTH(headTop, "Bert 🧸",1,2);
   addTH(headTop, "Aanw. Leden",1,2);
   addTH(headTop, "Aanw. Leiding",1,2);
 
@@ -257,6 +258,8 @@ function renderTable() {
     addLocatieCell(tr,o);
 
     if (isAdmin) addProcorCell(tr,o);
+
+    addBertCell(tr,o);
 
     // Aanwezigheids-aantallen
     const jeugdCount = jeugd.filter(j=>!j.hidden)
@@ -433,6 +436,31 @@ function addProcorCell(tr,o){
   tr.appendChild(td);
 }
 
+function addBertCell(tr,o){
+  const td=document.createElement("td");
+  td.textContent = getNaam(o.bert_met);
+
+  if (isAdmin){
+    td.classList.add("editable");
+    td.onclick=()=>{
+      const sel=document.createElement("select");
+      sel.innerHTML = `<option value=""></option>` +
+        jeugd.filter(j=>!j.hidden).map(j=>`<option value="${j.id}">${j.naam}</option>`).join("");
+
+      sel.value=o.bert_met || "";
+      td.innerHTML=""; td.appendChild(sel);
+      sel.focus();
+
+      sel.onblur=async()=>{
+        await update(ref(db,`${speltak}/opkomsten/${o.id}`),{ bert_met: sel.value });
+        loadData();
+      };
+    };
+  }
+
+  tr.appendChild(td);
+}
+
 /* -----------------------------------------------------
    AANWEZIGHEID
 ----------------------------------------------------- */
@@ -501,6 +529,39 @@ async function addNewOpkomst() {
   leiding.forEach(l=> nieuw.aanwezigheid["leiding-"+l.id]="onbekend");
 
   await set(ref(db,`${speltak}/opkomsten/${id}`), nieuw);
+  loadData();
+}
+
+/* -----------------------------------------------------
+   NIEUW LID
+----------------------------------------------------- */
+
+async function addNewMember() {
+  if (!isAdmin) return;
+
+  const naam = prompt("Naam van het lid:");
+  if (!naam) return;
+
+  const isJeugd = confirm("Is dit een jeugdlid? (OK = jeugdlid, Annuleer = leiding)");
+
+  const takPad = isJeugd ? "jeugdleden" : "leiding";
+  const lijst  = isJeugd ? jeugd : leiding;
+
+  const id = "lid"+Date.now();
+  const volgorde = lijst.length ? (lijst[lijst.length-1].volgorde || lijst.length) + 1 : 1;
+
+  await set(ref(db,`${speltak}/${takPad}/${id}`),{
+    naam,
+    volgorde,
+    hidden:false
+  });
+
+  // Voeg aanwezigheid in alle bestaande opkomsten toe
+  for (const o of opkomsten){
+    const key = isJeugd ? id : `leiding-${id}`;
+    await update(ref(db,`${speltak}/opkomsten/${o.id}/aanwezigheid`), { [key]: "onbekend" });
+  }
+
   loadData();
 }
 
@@ -611,4 +672,3 @@ async function deleteLid(lid,type){
 /* -----------------------------------------------------
    EINDE SCRIPT
 ----------------------------------------------------- */
-
