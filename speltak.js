@@ -225,27 +225,30 @@ function renderTable() {
   addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
   addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
   addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
-// Jeugdleden in dezelfde rij
-zichtbareJeugd.forEach(j => {
-  const th = document.createElement("th");
-  th.textContent = j.naam;
-  th.classList.add("name-vertical", "presence-col");
-  headerRowTop.appendChild(th);
-});
+    addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
 
-// Divider voor leiding
-const divider = document.createElement("th");
-divider.classList.add("col-split");
-divider.textContent = ""; 
-headerRowTop.appendChild(divider);
+      /* ---- JEUGD-KOLOMMEN + ZEBRA ---- */
+      zichtbareJeugd.forEach(j => {
+        const th = document.createElement("th");
+        th.textContent = j.naam;
+        th.classList.add("name-vertical", "presence-col", "zebra-jeugd");
+        headerRowTop.appendChild(th);
+      });
+      
+      /* ---- DIVIDER ---- */
+      const divider = document.createElement("th");
+      divider.classList.add("col-split");
+      divider.textContent = "";
+      headerRowTop.appendChild(divider);
+      
+      /* ---- LEIDING-KOLOMMEN + ZEBRA ---- */
+      zichtbareLeiding.forEach(l => {
+        const th = document.createElement("th");
+        th.textContent = l.naam;
+        th.classList.add("name-vertical", "presence-col", "zebra-leiding");
+        headerRowTop.appendChild(th);
+      });
 
-// Leiding in dezelfde rij
-zichtbareLeiding.forEach(l => {
-  const th = document.createElement("th");
-  th.textContent = l.naam;
-  th.classList.add("name-vertical", "presence-col");
-  headerRowTop.appendChild(th);
-});
 
   // Filter
   let lijst = [...opkomsten];
@@ -284,15 +287,21 @@ zichtbareLeiding.forEach(l => {
     addStaticCell(tr, cntJ, "aanw-count");
     addStaticCell(tr, cntL, "aanw-count");
 
+    /* JEUGD → blauw */
     zichtbareJeugd.forEach(j => {
-      tr.appendChild(makePresenceCell(o, j.id));
+      const td = makePresenceCell(o, j.id);
+      td.classList.add("zebra-jeugd");
+      tr.appendChild(td);
     });
-
+    
+    /* LEIDING → geel */
     zichtbareLeiding.forEach((l, idx) => {
       const td = makePresenceCell(o, "leiding-" + l.id);
+      td.classList.add("zebra-leiding");
       if (idx === 0) td.classList.add("col-split");
       tr.appendChild(td);
     });
+
 
     tableBody.appendChild(tr);
   });
