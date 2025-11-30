@@ -383,7 +383,6 @@ th.name-vertical {
   .planning-table td:nth-child(n+9) {
       display: none !important;
   }
-}
    }
    .presence-col:nth-of-type(even) {
        background: rgba(0, 0, 0, 0.04);
