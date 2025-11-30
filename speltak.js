@@ -176,7 +176,15 @@ function loadData() {
     renderLedenbeheer();
   });
 }
-
+/* -----------------------------------------------------
+   RENDER MELDINGEN INSTELLINGEN
+----------------------------------------------------- */
+function renderMeldingenInstellingen() {
+  meldLeidingEnabledInput.checked = !!meldingenInstellingen.leidingEnabled;
+  meldLeidingThresholdInput.value = meldingenInstellingen.leidingThreshold;
+  meldOnbekendEnabledInput.checked = !!meldingenInstellingen.onbekendEnabled;
+  meldOnbekendDaysInput.value = meldingenInstellingen.onbekendDays;
+}
 /* -----------------------------------------------------
    HEADER / TABEL
 ----------------------------------------------------- */
