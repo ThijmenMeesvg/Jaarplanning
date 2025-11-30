@@ -222,18 +222,23 @@ function renderTable() {
     }
   });
 
-  if (leiding.length>0){
-    const split=document.createElement("th");
-    split.classList.add("col-leiding","name-vertical","col-split");
-    split.textContent=leiding[0].hidden?"":leiding[0].naam;
-    if (!leiding[0].hidden) headBot.appendChild(split);
-
-    leiding.slice(1).forEach(l=>{
-      if (!l.hidden){
-        const th=document.createElement("th");
-        th.textContent=l.naam;
-        th.classList.add("col-leiding","name-vertical");
-        headBot.appendChild(th);
+      const zichtbareLeiding = leiding.filter(l => !l.hidden);
+      
+      if (zichtbareLeiding.length > 0) {
+          const first = zichtbareLeiding[0];
+      
+          const th = document.createElement("th");
+          th.textContent = first.naam;
+          th.classList.add("col-leiding", "name-vertical", "col-split");
+          headBot.appendChild(th);
+      
+          zichtbareLeiding.slice(1).forEach(l => {
+              const th2 = document.createElement("th");
+              th2.textContent = l.naam;
+              th2.classList.add("col-leiding", "name-vertical");
+              headBot.appendChild(th2);
+          });
+      }
       }
     });
   }
@@ -281,7 +286,8 @@ function renderTable() {
     jeugd.forEach(j=>{
       if (!j.hidden){
         tr.appendChild(makePresenceCell(o,j.id,"jeugd"));
-      }
+        td.classList.add("presence-col");
+          }
     });
 
     leiding.forEach((l,idx)=>{
