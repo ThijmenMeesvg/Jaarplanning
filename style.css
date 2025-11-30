@@ -367,6 +367,14 @@ td.editable:hover {
   align-items: center;
 }
 
+.planning-controls {
+  margin: 0.25rem 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .planning-controls button {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
@@ -379,6 +387,18 @@ td.editable:hover {
 .planning-controls button.active {
   background: var(--blue-soft);
   border-color: var(--blue);
+}
+
+/* printknop naar rechts */
+.print-button {
+  margin-left: auto;
+  background: var(--blue);
+  color: #ffffff;
+  border-color: var(--blue);
+}
+
+.print-button:hover {
+  opacity: 0.9;
 }
 
 /* rij om een nieuwe opkomst toe te voegen */
@@ -440,7 +460,6 @@ th.name-vertical {
   background: #e3f2fd;
 }
 
-/* printvriendelijke versie: alleen de planning */
 @media print {
   body {
     background: #ffffff;
@@ -464,6 +483,14 @@ th.name-vertical {
   .planning-table {
     box-shadow: none;
   }
+
+  /* verberg alles na Bert: aantallen, namen en aanwezigheid */
+  .col-jeugd,
+  .col-leiding,
+  th.name-vertical {
+    display: none !important;
+  }
 }
+
 
 
