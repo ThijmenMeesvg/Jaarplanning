@@ -1,185 +1,222 @@
 :root {
-  /* Scouting pastel achtergrondkleuren per speltak */
-  --bevers-bg: #FDEAEA;
-  --welpen-bg: #EAF6EB;
-  --scouts-bg: #F8F1E7;
-  --explorers-bg: #FCE8E8;
-  --rovers-bg: #FFF7DF;
-  --stam-bg: #E7F1FB;
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --blue: #003d7a;
+  --blue-soft: #e1ecff;
+  --accent: #ffd200;
+  --border: #dde3ef;
+  --text-main: #1f2933;
+  --text-muted: #6b7280;
 
-  /* Echte blousekleuren */
-  --bevers-border: #C62828;
-  --welpen-border: #2E7D32;
-  --scouts-border: #C8A76A;
-  --explorers-border: #B71C1C;
-  --rovers-border: #FBC02D;
-  --stam-border: #1565C0;
+  /* subtiele blouse-kleuren (voor later op buttons/kaarten) */
+  --bevers: #e51b23;
+  --welpen: #009b3a;
+  --scouts: #c69c6d;
+  --explorers: #ff6600;
+  --rovers: #ffd200;
+  --stam: #003d7a;
 
-  --blue: #003d82;
-  --blue-soft: #e3f2fd;
-  --border: #ddd;
-  --card: #fff;
-  --shadow: 0 2px 6px rgba(0,0,0,0.12);
+  --shadow: 0 6px 18px rgba(15, 23, 42, .1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #f7f7f7;
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
 }
 
-/* ---------------------------------------
-   TOPBAR
---------------------------------------- */
+/* -------------------- GENERIC -------------------- */
+
+.hidden {
+  display: none !important;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* -------------------- TOPBAR -------------------- */
 
 .topbar {
-  background: var(--blue);
-  color: white;
-  padding: 0.8rem 1.2rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
+  padding: 0.75rem 1.5rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .topbar-logo {
-  height: 55px;
+  height: 44px;
+  width: 44px;
+  object-fit: contain;
 }
 
 .topbar-title h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.25rem;
 }
 
-/* ---------------------------------------
-   INDEX KAARTEN
---------------------------------------- */
-
-.speltak-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
-  gap: 1.2rem;
-  margin-top: 2rem;
+.topbar-title span {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
-.speltak-card {
-  background: white;
-  padding: 2.4rem 1rem;
-  text-align: center;
+.backlink {
   text-decoration: none;
-  color: #333;
-  border-radius: 10px;
-  border: 3px solid transparent;
-  box-shadow: var(--shadow);
-  transition: 0.25s;
+  color: var(--blue);
+  font-weight: 500;
 }
 
-/* Pastel kleuren per speltak */
-.speltak-card.bevers { background: var(--bevers-bg); border-color: var(--bevers-border); }
-.speltak-card.welpen { background: var(--welpen-bg); border-color: var(--welpen-border); }
-.speltak-card.scouts { background: var(--scouts-bg); border-color: var(--scouts-border); }
-.speltak-card.explorers { background: var(--explorers-bg); border-color: var(--explorers-border); }
-.speltak-card.rovers { background: var(--rovers-bg); border-color: var(--rovers-border); }
-.speltak-card.stam { background: var(--stam-bg); border-color: var(--stam-border); }
+/* -------------------- INFO BLOK -------------------- */
 
-.speltak-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 5px 14px rgba(0,0,0,0.2);
-}
-
-/* ---------------------------------------
-   PLANNING & TABEL
---------------------------------------- */
-
-.container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
-
-.info-block,
-.planning-section,
-.ledenbeheer {
+.info-block {
   background: var(--card);
-  padding: 1.2rem;
-  border-radius: 10px;
+  border-radius: 16px;
   box-shadow: var(--shadow);
-  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-top: 1.5rem;
 }
 
-#infotekst {
-  white-space: pre-line;
-}
-
-.info-block textarea {
-  width: 100%;
-  height: 120px;
-}
-
-.save-info-btn {
-  margin-top: 0.5rem;
-  background: var(--blue);
-  color: white;
-  border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.planning-header-row {
-  display: flex;
-  gap: 0.5rem;
+.info-block h2 {
+  margin-top: 0;
   margin-bottom: 0.75rem;
 }
 
-.edit-button,
-.add-member-btn,
-.print-button {
-  background: var(--blue);
-  color: white;
-  border: none;
-  padding: 0.5rem 1.2rem;
-  border-radius: 999px;   /* mooi rond */
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+#infotekst {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  min-height: 1.2em;
 }
 
-/* secundaire variant (bv. mailbox / handleiding) */
-.edit-button.secondary {
-  background: white;
+#infotekst_edit {
+  width: 100%;
+  min-height: 140px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  resize: vertical;
+}
+
+/* -------------------- BUTTONS -------------------- */
+
+.pill-btn,
+.primary-btn {
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: background .15s ease, color .15s ease, transform .05s ease;
+  white-space: nowrap;
+}
+
+.pill-btn.primary,
+.primary-btn {
+  background: var(--blue);
+  color: #fff;
+}
+
+.pill-btn.primary:hover,
+.primary-btn:hover {
+  background: #002b55;
+  transform: translateY(-1px);
+}
+
+.pill-btn.outline {
+  background: #fff;
   color: var(--blue);
   border: 1px solid var(--blue);
 }
 
-/* “ghost” variant voor instellingen */
-.edit-button.ghost {
+.pill-btn.outline:hover {
+  background: var(--blue-soft);
+}
+
+.pill-btn.ghost {
   background: transparent;
   color: var(--blue);
   border: 1px solid var(--blue-soft);
 }
 
-/* printknop naar rechts */
+.pill-btn.ghost:hover {
+  background: var(--blue-soft);
+}
+
+.primary-btn {
+  margin-top: 0.5rem;
+}
+
+.print-btn {
+  margin-left: auto;
+  background: var(--blue);
+  color: #fff;
+}
+
+/* chips voor filters */
+
+.chip {
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  margin-right: 0.35rem;
+}
+
+.chip.active {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+/* -------------------- PLANNING -------------------- */
+
+.planning-section {
+  margin-top: 1.25rem;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 1rem 1.2rem 1.5rem;
+}
+
+.planning-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
 .planning-controls {
   display: flex;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
-}
-
-.print-button {
-  margin-left: auto;
-}
-
-.planning-controls button.active {
-  background: var(--blue-soft);
-  color: black;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .table-wrapper {
@@ -187,80 +224,123 @@ body {
 }
 
 .planning-table {
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: collapse;
   font-size: 0.9rem;
 }
 
 .planning-table th,
 .planning-table td {
   border: 1px solid var(--border);
-  padding: 5px 6px;
+  padding: 0.4rem 0.45rem;
   text-align: center;
+  vertical-align: middle;
 }
 
-/* Verticale namen */
+.planning-table thead th {
+  background: var(--blue-soft);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.add-row {
+  text-align: left;
+  font-weight: 600;
+  background: #e8fbe8;
+  cursor: pointer;
+}
+.add-row:hover {
+  background: #d9f5d9;
+}
+
+/* rijkleuren */
+
+.row-grey {
+  background: #f0f0f0 !important;
+}
+
+.row-next {
+  background: #dcfce7 !important;
+}
+
+.row-bijzonder {
+  background: #fff6cc !important;
+}
+
+.row-kamp {
+  background: #ffe4c7 !important;
+}
+
+/* delete */
+
+.delete-btn {
+  cursor: pointer;
+  color: #c62828;
+  font-weight: bold;
+}
+
+/* aanwezigheid + zebra */
+
 .name-vertical {
   writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  text-orientation: mixed;
+  padding: 0.3rem 0.15rem;
+  font-size: 0.75rem;
+  background: #f9fafb;
 }
 
-/* Scheidingslijn leiding */
 .col-split {
-  border-left: 3px solid #444 !important;
+  border-left: 3px solid #9ca3af;
 }
 
-/* Zebra striping alleen in aanwezigheidsgedeelte */
-.presence-col:nth-of-type(even) {
-  background: rgba(0,0,0,0.05);
+.presence-cell {
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
-/* Aanwezigheid kleuren */
-.presence-aanwezig { background: #e3f7e3 !important; }
-.presence-afwezig  { background: #fde0e0 !important; }
-.presence-reminder { background: #fff4c2 !important; }
+.presence-aanwezig {
+  color: #15803d;
+}
 
-/* Opkomst-rij kleuren */
-.row-grey      { background: #eeeeee !important; }
-.row-next      { background: #d9f7d9 !important; }
-.row-bijzonder { background: #fff4bf !important; }
-.row-kamp      { background: #ffd9b5 !important; }
+.presence-afwezig {
+  color: #b91c1c;
+}
 
-/* ---------------------------------------
-   LEDENBEHEER
---------------------------------------- */
+.presence-reminder {
+  color: #b45309;
+}
+
+/* verticale zebra (namen / aanwezigheid) */
+
+.planning-table tbody tr td:nth-child(odd).presence-col {
+  background: #f9fafb;
+}
+
+/* aantallen */
+
+.aanw-count {
+  background: #fff7ed;
+  font-weight: 600;
+}
+
+/* -------------------- LEDENBEHEER -------------------- */
+
+.ledenbeheer {
+  margin-top: 1.5rem;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.4rem 1.4rem;
+}
 
 .ledenbeheer-columns {
   display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.ledenbeheer-columns > div {
-  flex: 1;
-  min-width: 220px;
-}
-
-.ledenbeheer ul {
-  list-style: none;
-  padding: 0;
-}
-
-.ledenbeheer h2 {
-  margin-top: 0;
-}
-
-.ledenbeheer-columns {
-  display: flex;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .ledenbeheer-col {
   flex: 1;
-}
-
-.ledenbeheer-col h3 {
-  margin-bottom: 0.5rem;
 }
 
 .ledenbeheer-col ul {
@@ -272,39 +352,42 @@ body {
 .ledenbeheer-col li {
   display: flex;
   justify-content: space-between;
-  background: #f9f9f9;
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  border-radius: 6px;
-  margin-bottom: 6px;
   align-items: center;
-}
-
-.ledenbeheer-controls {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.ledenbeheer-btn {
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 10px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: #f9fafb;
+  font-size: 0.9rem;
 }
 
-/* verborgene leden wat grijzer */
 .lid-verborgen {
   opacity: 0.6;
   font-style: italic;
 }
+
+.ledenbeheer-controls {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.ledenbeheer-btn {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* -------------------- MLDINGEN -------------------- */
+
 .meldingen {
+  margin-top: 1.5rem;
   background: var(--card);
-  padding: 1.2rem;
-  border-radius: 10px;
+  border-radius: 16px;
   box-shadow: var(--shadow);
-  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.4rem 1.4rem;
 }
 
 .meldingen h2 {
@@ -313,14 +396,14 @@ body {
 
 .meldingen-uitleg {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--text-muted);
   margin-bottom: 1rem;
 }
 
 .meldingen-row {
-  margin-bottom: 1rem;
-  padding-bottom: 0.8rem;
   border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.9rem;
 }
 
 .meldingen-row:last-child {
@@ -330,12 +413,12 @@ body {
 .meldingen-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   font-weight: 500;
 }
 
 .meldingen-sub {
-  margin-top: 0.4rem;
+  margin-top: 0.3rem;
   font-size: 0.9rem;
 }
 
@@ -343,50 +426,115 @@ body {
   width: 3rem;
   text-align: center;
 }
-/* ---------------------------------------
-   PRINT VIEW
---------------------------------------- */
+
+.meldingen-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* -------------------- INDEX (speltak kaarten) -------------------- */
+
+.speltak-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.speltak-card {
+  text-decoration: none;
+  color: inherit;
+}
+
+.speltak-card-inner {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  border-left: 6px solid var(--blue);
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+
+.speltak-card-inner h3 {
+  margin: 0 0 0.3rem;
+}
+
+.speltak-age {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.speltak-card-inner p {
+  font-size: 0.9rem;
+}
+
+.speltak-card-inner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, .18);
+}
+
+/* accent-kleuren per speltak (optioneel) */
+.speltak-card.bevers .speltak-card-inner { border-left-color: var(--bevers); }
+.speltak-card.welpen .speltak-card-inner { border-left-color: var(--welpen); }
+.speltak-card.scouts .speltak-card-inner { border-left-color: var(--scouts); }
+.speltak-card.explorers .speltak-card-inner { border-left-color: var(--explorers); }
+.speltak-card.rovers .speltak-card-inner { border-left-color: var(--rovers); }
+.speltak-card.stam .speltak-card-inner { border-left-color: var(--stam); }
+
+/* -------------------- PRINT -------------------- */
+
 @media print {
 
-  /* alles wat niet op de uitdraai hoort */
   header,
   .info-block textarea,
-  .save-info-btn,
-  .edit-button,
-  .add-member-btn,
+  #saveInfoButton,
+  .planning-header-row,
   .planning-controls,
-  .ledenbeheer,
   #addOpkomstRow,
+  .ledenbeheer,
   .meldingen {
     display: none !important;
   }
 
-  /* delete-kolom verbergen */
+  body {
+    background: #fff;
+  }
+
+  .container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .planning-section {
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  /* deletekolom verbergen */
   .planning-table th:first-child,
   .planning-table td:first-child {
     display: none !important;
   }
 
-  /* naam-rij (verticale namen) verbergen */
+  /* tweede header (namen) verbergen */
   .planning-table thead tr:last-child {
     display: none !important;
   }
 
-  /* aanwezigheid + aantallen + Bert + Procor verbergen
-     (zorg dat deze klassen op de cellen staan in JS) */
-  .presence-col,
-  .name-vertical,
-  .aanw-column,
-  .aanw-count,
+  /* kolommen voor Procor, Bert en aantallen + aanwezigheid verbergen */
+  .col-procor,
   .col-bert,
-  .col-procor {
+  .aanw-count,
+  .presence-col,
+  .name-vertical {
     display: none !important;
   }
 
-  /* als er toch nog extra kolommen zijn: alles vanaf kolom 9 weg */
+  /* extra veiligheid: alles na kolom 8 weg */
   .planning-table th:nth-child(n+9),
   .planning-table td:nth-child(n+9) {
     display: none !important;
   }
 }
-
