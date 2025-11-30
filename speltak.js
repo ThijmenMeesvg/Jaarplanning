@@ -287,17 +287,18 @@ function renderTable() {
     /* JEUGD → blauw */
     zichtbareJeugd.forEach(j => {
       const td = makePresenceCell(o, j.id);
-      td.classList.add("zebra-jeugd");
+      td.classList.add("presence-col", "zebra-jeugd");
       tr.appendChild(td);
     });
     
     /* LEIDING → geel */
     zichtbareLeiding.forEach((l, idx) => {
       const td = makePresenceCell(o, "leiding-" + l.id);
-      td.classList.add("zebra-leiding");
+      td.classList.add("presence-col", "zebra-leiding");
       if (idx === 0) td.classList.add("col-split");
       tr.appendChild(td);
     });
+
 
 
     tableBody.appendChild(tr);
