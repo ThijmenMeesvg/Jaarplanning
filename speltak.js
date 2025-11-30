@@ -180,8 +180,19 @@ async function loadData() {
 async function saveInfo() {
   const txt = document.getElementById("infotekst_edit").value;
   await update(ref(db, speltak), { info: txt });
+  normalizeOrder(type);
   infotekst = txt;
   document.getElementById("infotekst").textContent = txt;
+}
+async function normalizeOrder(type) {
+    const lijst = type === "jeugd" ? jeugd : leiding;
+    lijst
+        .sort((a,b)=>a.volgorde-b.volgorde)
+        .forEach((l,i)=> {
+            update(ref(db, `${speltak}/${type==="jeugd"?"jeugdleden":"leiding"}/${l.id}`), {
+                volgorde: i+1
+            });
+        });
 }
 
 /* -----------------------------------------------------
