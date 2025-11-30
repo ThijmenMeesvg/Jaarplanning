@@ -482,6 +482,24 @@ body {
 .speltak-card.rovers .speltak-card-inner { border-left-color: var(--rovers); }
 .speltak-card.stam .speltak-card-inner { border-left-color: var(--stam); }
 
+/* ZEBRA-KLEUREN VOOR AANWEZIGHEIDSKOLOMMEN */
+
+/* JEUGD – zacht blauw */
+.zebra-jeugd {
+  background: #e8f1ff !important;
+}
+
+/* LEIDING – zacht geel */
+.zebra-leiding {
+  background: #fff6d6 !important;
+}
+
+/* Divider visueel sterker maken */
+th.col-split,
+td.col-split {
+  border-left: 4px solid #9ca3af !important;
+}
+
 /* -------------------- PRINT -------------------- */
 
 @media print {
