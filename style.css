@@ -500,6 +500,13 @@ td.col-split {
   border-left: 4px solid #9ca3af !important;
 }
 
+#headerRowBottom {
+  display: none !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 /* -------------------- PRINT -------------------- */
 
 @media print {
