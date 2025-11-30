@@ -225,25 +225,27 @@ function renderTable() {
   addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
   addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
   addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
+// Jeugdleden in dezelfde rij
+zichtbareJeugd.forEach(j => {
+  const th = document.createElement("th");
+  th.textContent = j.naam;
+  th.classList.add("name-vertical", "presence-col");
+  headerRowTop.appendChild(th);
+});
 
-  addTH(headerRowTop, "Jeugdleden", 1, zichtbareJeugd.length);
-  addTH(headerRowTop, "Leiding", 1, zichtbareLeiding.length);
+// Divider voor leiding
+const divider = document.createElement("th");
+divider.classList.add("col-split");
+divider.textContent = ""; 
+headerRowTop.appendChild(divider);
 
-  // Onderste rij
-  zichtbareJeugd.forEach(j => {
-    const th = document.createElement("th");
-    th.textContent = j.naam;
-    th.classList.add("name-vertical");
-    headerRowBottom.appendChild(th);
-  });
-
-  zichtbareLeiding.forEach((l, idx) => {
-    const th = document.createElement("th");
-    th.textContent = l.naam;
-    th.classList.add("name-vertical");
-    if (idx === 0) th.classList.add("col-split");
-    headerRowBottom.appendChild(th);
-  });
+// Leiding in dezelfde rij
+zichtbareLeiding.forEach(l => {
+  const th = document.createElement("th");
+  th.textContent = l.naam;
+  th.classList.add("name-vertical", "presence-col");
+  headerRowTop.appendChild(th);
+});
 
   // Filter
   let lijst = [...opkomsten];
