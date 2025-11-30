@@ -1,80 +1,113 @@
-/* ----------------------------------------------------------
-   BASIS / ALGEMEEN
----------------------------------------------------------- */
-
 :root {
+  /* Scouting pastel achtergrondkleuren per speltak */
+  --bevers-bg: #FDEAEA;
+  --welpen-bg: #EAF6EB;
+  --scouts-bg: #F8F1E7;
+  --explorers-bg: #FCE8E8;
+  --rovers-bg: #FFF7DF;
+  --stam-bg: #E7F1FB;
+
+  /* Echte blousekleuren */
+  --bevers-border: #C62828;
+  --welpen-border: #2E7D32;
+  --scouts-border: #C8A76A;
+  --explorers-border: #B71C1C;
+  --rovers-border: #FBC02D;
+  --stam-border: #1565C0;
+
   --blue: #003d82;
   --blue-soft: #e3f2fd;
-  --yellow: #fff8e1;
-
   --border: #ddd;
-  --card-bg: #fff;
-  --shadow: 0 2px 6px rgba(0,0,0,0.10);
+  --card: #fff;
+  --shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
-html, body {
+body {
   margin: 0;
-  padding: 0;
+  background: #f7f7f7;
   font-family: Arial, sans-serif;
-  background: #f8f8f8;
 }
 
-/* ----------------------------------------------------------
+/* ---------------------------------------
    TOPBAR
----------------------------------------------------------- */
+--------------------------------------- */
 
 .topbar {
   background: var(--blue);
-  color: #fff;
-  padding: 0.7rem 1rem;
+  color: white;
+  padding: 0.8rem 1.2rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
 .topbar-left {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .topbar-logo {
-  height: 50px;
-  width: 50px;
+  height: 55px;
 }
 
 .topbar-title h1 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
 }
 
-.topbar-title span {
-  font-size: 0.85rem;
-  opacity: 0.8;
+/* ---------------------------------------
+   INDEX KAARTEN
+--------------------------------------- */
+
+.speltak-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+  gap: 1.2rem;
+  margin-top: 2rem;
 }
 
-.backlink {
-  color: #fff;
+.speltak-card {
+  background: white;
+  padding: 2.4rem 1rem;
+  text-align: center;
   text-decoration: none;
-  font-size: 0.9rem;
+  color: #333;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  box-shadow: var(--shadow);
+  transition: 0.25s;
 }
 
-/* ----------------------------------------------------------
-   ALGEMENE CONTAINERS & SECTIES
----------------------------------------------------------- */
+/* Pastel kleuren */
+.speltak-card.bevers { background: var(--bevers-bg); border-color: var(--bevers-border); }
+.speltak-card.welpen { background: var(--welpen-bg); border-color: var(--welpen-border); }
+.speltak-card.scouts { background: var(--scouts-bg); border-color: var(--scouts-border); }
+.speltak-card.explorers { background: var(--explorers-bg); border-color: var(--explorers-border); }
+.speltak-card.rovers { background: var(--rovers-bg); border-color: var(--rovers-border); }
+.speltak-card.stam { background: var(--stam-bg); border-color: var(--stam-border); }
+
+.speltak-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 5px 14px rgba(0,0,0,0.2);
+}
+
+/* ---------------------------------------
+   PLANNING & TABEL
+--------------------------------------- */
 
 .container {
-  max-width: 1100px;
-  margin: 1rem auto;
+  max-width: 1200px;
+  margin: 2rem auto;
   padding: 0 1rem;
 }
 
 .info-block,
 .planning-section,
 .ledenbeheer {
-  background: var(--card-bg);
-  padding: 1rem;
-  border-radius: 8px;
+  background: var(--card);
+  padding: 1.2rem;
+  border-radius: 10px;
   box-shadow: var(--shadow);
   margin-bottom: 1.5rem;
 }
@@ -82,234 +115,83 @@ html, body {
 .info-block textarea {
   width: 100%;
   height: 120px;
-  font-size: 0.95rem;
-  padding: 8px;
 }
 
-.save-info-btn {
-  margin-top: 8px;
+.edit-button, .add-member-btn, .print-button {
   background: var(--blue);
-  color: #fff;
-  padding: 0.4rem 1rem;
+  color: white;
   border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-/* ----------------------------------------------------------
-   BEWERK- en ACTIEKNOPPEN
----------------------------------------------------------- */
-
-.edit-button {
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1.1rem;
   border-radius: 6px;
   cursor: pointer;
 }
-
-.add-member-btn {
-  padding: 0.45rem 1rem;
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.add-member-btn:hover,
-.edit-button:hover {
-  opacity: 0.85;
-}
-
-.print-button {
-  margin-left: auto;
-  padding: 0.45rem 1rem;
-  border-radius: 50px;
-  background: var(--blue);
-  color: #fff;
-  border: 1px solid var(--blue);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.print-button:hover {
-  opacity: 0.85;
-}
-
-/* ----------------------------------------------------------
-   FILTERKNOPPEN
----------------------------------------------------------- */
 
 .planning-controls {
   display: flex;
-  gap: 0.5rem;
-  margin: 0.8rem 0 0.7rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.planning-controls button {
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.85rem;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
 }
 
 .planning-controls button.active {
   background: var(--blue-soft);
-  border-color: var(--blue);
+  color: black;
 }
-
-/* ----------------------------------------------------------
-   TABEL
----------------------------------------------------------- */
 
 .table-wrapper {
   overflow-x: auto;
 }
 
 .planning-table {
-  width: 100%;
   border-collapse: collapse;
+  width: 100%;
   font-size: 0.9rem;
 }
 
 .planning-table th,
 .planning-table td {
   border: 1px solid var(--border);
-  padding: 4px 6px;
+  padding: 5px 6px;
   text-align: center;
-}
-
-.planning-table th {
-  background: #f0f0f0;
-}
-
-/* Specifieke kolommen */
-.col-jeugd {
-  background: #fff8e1;
-}
-
-.col-leiding {
-  background: #e3f2fd;
 }
 
 /* Verticale namen */
-th.name-vertical {
+.name-vertical {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  padding: 4px 0;
-  white-space: nowrap;
-  height: 140px;
-  font-size: 0.85rem;
 }
 
-/* Verticale scheiding tussen jeugd en leiding */
+/* Scheidingslijn */
 .col-split {
-  border-left: 3px solid #555 !important;
+  border-left: 3px solid #444 !important;
 }
 
-/* Zebra-striping voor aanwezigheidscellen */
-.presence-cell:nth-child(even) {
-  background: rgba(0,0,0,0.04);
+/* Zebra striping */
+.presence-col:nth-of-type(even) {
+  background: rgba(0,0,0,0.05);
 }
 
-/* Groen en rood */
-.presence-aanwezig {
-  background: #e3f7e3 !important;
-}
+/* Aanwezigheid kleuren */
+.presence-aanwezig { background: #e3f7e3 !important; }
+.presence-afwezig  { background: #fde0e0 !important; }
+.presence-reminder { background: #fff4c2 !important; }
 
-.presence-afwezig {
-  background: #fde0e0 !important;
-}
-
-/* Reminder (!) voor bijna komende opkomsten */
-.presence-reminder {
-  background: #fff2cc !important;
-}
-
-/* ----------------------------------------------------------
-   EDITBARE CELLEN
----------------------------------------------------------- */
-
-.editable:hover {
-  background: #fff6cc;
-  cursor: pointer;
-}
-
-/* Voeg opkomst toe */
-.add-row {
-  background: #e9f9e9;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-}
-
-/* Delete knop */
-.delete-btn {
-  cursor: pointer;
-  width: 2rem;
-}
-
-/* Verberg items */
-.hidden {
-  display: none !important;
-}
-
-/* ----------------------------------------------------------
+/* ---------------------------------------
    LEDENBEHEER
----------------------------------------------------------- */
+--------------------------------------- */
 
-.ledenbeheer h2 {
-  margin-top: 0;
-}
-
-.ledenbeheer-columns {
-  display: flex;
-  gap: 2rem;
-}
-
-.ledenbeheer-col {
-  flex: 1;
-}
-
-.ledenbeheer-col h3 {
-  margin-bottom: 0.5rem;
-}
-
-.ledenbeheer-col ul {
+.ledenbeheer ul {
   list-style: none;
   padding: 0;
-  margin: 0;
 }
 
-.ledenbeheer-col li {
+.ledenbeheer li {
   display: flex;
   justify-content: space-between;
-  background: #f9f9f9;
-  border: 1px solid var(--border);
   padding: 6px 8px;
-  border-radius: 4px;
+  background: #fafafa;
+  border: 1px solid #ccc;
   margin-bottom: 6px;
-  align-items: center;
-}
-
-.ledenbeheer-controls {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.ledenbeheer-btn {
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  border: 1px solid var(--border);
-  background: #fff;
+  border-radius: 6px;
 }
 
 .lid-verborgen {
@@ -317,74 +199,21 @@ th.name-vertical {
   font-style: italic;
 }
 
-/* ----------------------------------------------------------
-   KLEURCODERING OPKOMSTEN
----------------------------------------------------------- */
+.hidden { display: none !important; }
 
-.row-grey {
-  background: #eeeeee !important;
-}
-
-.row-next {
-  background: #d9f7d9 !important;
-}
-
-.row-bijzonder {
-  background: #fff4bf !important;
-}
-
-.row-kamp {
-  background: #ffd9b5 !important;
-}
-
-/* ----------------------------------------------------------
-   PRINTMODUS
----------------------------------------------------------- */
+/* ---------------------------------------
+   PRINT VIEW
+--------------------------------------- */
 
 @media print {
 
-  body {
-    background: #fff;
-  }
-
-  .topbar,
-  .backlink,
-  .edit-button,
-  .add-member-btn,
-  .planning-controls,
-  .ledenbeheer,
-  #addOpkomstRow,
-  .info-block textarea,
-  .save-info-btn {
+  header, .edit-button, .add-member-btn, .planning-controls,
+  .ledenbeheer, #addOpkomstRow, textarea, .save-info-btn {
     display: none !important;
   }
 
-  .container {
-    max-width: 100%;
-    margin: 0;
-    box-shadow: none;
-    padding: 0;
-  }
-
-  .planning-table {
-    box-shadow: none;
-  }
-
-  /* Verberg ALLES na Eindtijd */
-  .col-jeugd,
-  .col-leiding,
-  .presence-cell,
-  th.name-vertical,
-  .aanw-column {
-    display: none !important;
-  }
-   /* Verberg ALLES na Eindtijd */
   .planning-table th:nth-child(n+9),
   .planning-table td:nth-child(n+9) {
-      display: none !important;
+    display: none !important;
   }
-   .presence-col:nth-of-type(even) {
-       background: rgba(0, 0, 0, 0.04);
-   }
-
-
+}
