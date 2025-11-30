@@ -378,10 +378,10 @@ th.name-vertical {
   .aanw-column {
     display: none !important;
   }
-   @media print {
+   /* Verberg ALLES na Eindtijd */
   .planning-table th:nth-child(n+9),
   .planning-table td:nth-child(n+9) {
-    display: none !important;
+      display: none !important;
   }
 }
    }
