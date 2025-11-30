@@ -229,13 +229,6 @@ function renderTable() {
   addTH(headTop, "Aanw. Leden", 1, 2);   // punt 15
   addTH(headTop, "Aanw. Leiding", 1, 2); // punt 15
 
-  /* --- HEADER RIJ 2 (namen, verticaal) --- */
-  // lege kolommen onder de vaste velden
-  const vasteKolommen = 11;
-  for (let i = 0; i < vasteKolommen; i++) {
-    addTH(headBot, "");
-  }
-
   jeugd.forEach(j => {
     const th = document.createElement("th");
     th.textContent = j.naam;
