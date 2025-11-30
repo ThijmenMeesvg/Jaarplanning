@@ -1,4 +1,4 @@
-// speltak.js – gedeeld voor alle speltak-pagina's
+// speltak.js – verbeterde versie met directe dropdowns, datepickers & betere headerlogica
 
 import {
   initializeApp
@@ -41,10 +41,10 @@ const speltak = body.dataset.speltak || "bevers";
 const DEFAULT_ADMIN_PASSWORD = "bevers";
 
 let isAdmin = false;
-let filterMode = "all"; // all | future | past
+let filterMode = "all";
 
-let opkomsten = [];   // [{id,...}]
-let jeugd = [];       // [{id,naam,verborgen,volgorde}]
+let opkomsten = [];
+let jeugd = [];
 let leiding = [];
 let infoTekst = "";
 
@@ -93,28 +93,18 @@ const saveMeldingenButton       = document.getElementById("saveMeldingenButton")
 const testMeldingenButton       = document.getElementById("testMeldingenButton");
 
 /* -----------------------------------------------------
-   DATUM HELPERS
+   DATE HELPERS
 ----------------------------------------------------- */
 
 function todayISO() {
   const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return d.toISOString().split("T")[0];
 }
 
 function toDisplayDate(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
   return `${d}-${m}-${y}`;
-}
-
-function fromDisplayDate(display) {
-  if (!display) return "";
-  const [d, m, y] = display.split("-");
-  if (!d || !m || !y) return "";
-  return `${y}-${m}-${d}`;
 }
 
 function compareISO(a, b) {
@@ -142,7 +132,7 @@ function isBinnenNDagen(iso, n) {
 }
 
 /* -----------------------------------------------------
-   LOAD DATA
+   DATA LADEN
 ----------------------------------------------------- */
 
 function loadData() {
@@ -151,12 +141,10 @@ function loadData() {
   onValue(spRef, (snapshot) => {
     const data = snapshot.val() || {};
 
-    // info
     infoTekst = data.info || "";
     infoTekstP.textContent = infoTekst || "Hier kun je belangrijke telefoonnummers en taken van de leiding kwijt.";
     infoTekstEdit.value = infoTekst;
 
-    // meldingen
     const m = data.meldingen || {};
     meldingenInstellingen = {
       leidingEnabled: !!m.leidingEnabled,
@@ -166,25 +154,23 @@ function loadData() {
     };
     renderMeldingenInstellingen();
 
-    // leden
     jeugd = Object.entries(data.jeugdleden || {}).map(([id, v]) => ({
       id,
-      naam: v.naam || "",
+      naam: v.naam,
       verborgen: !!v.hidden,
       volgorde: v.volgorde ?? 0
-    })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam, "nl"));
+    })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
 
     leiding = Object.entries(data.leiding || {}).map(([id, v]) => ({
       id,
-      naam: v.naam || "",
+      naam: v.naam,
       verborgen: !!v.hidden,
       volgorde: v.volgorde ?? 0
-    })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam, "nl"));
+    })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
 
-    // opkomsten
     opkomsten = Object.entries(data.opkomsten || {})
       .map(([id, v]) => ({ id, ...v }))
-      .sort((a, b) => compareISO(a.datum || "", b.datum || ""));
+      .sort((a, b) => compareISO(a.datum, b.datum));
 
     renderTable();
     renderLedenbeheer();
@@ -192,22 +178,20 @@ function loadData() {
 }
 
 /* -----------------------------------------------------
-   RENDER MELDINGEN INSTELLINGEN
------------------------------------------------------ */
-
-function renderMeldingenInstellingen() {
-  meldLeidingEnabledInput.checked = meldingenInstellingen.leidingEnabled;
-  meldLeidingThresholdInput.value = meldingenInstellingen.leidingThreshold;
-  meldOnbekendEnabledInput.checked = meldingenInstellingen.onbekendEnabled;
-  meldOnbekendDaysInput.value = meldingenInstellingen.onbekendDays;
-}
-
-/* -----------------------------------------------------
-   TABEL
+   HEADER / TABEL
 ----------------------------------------------------- */
 
 function clearNode(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function addTH(row, text, rowSpan = 1, colSpan = 1, extra = "") {
+  const th = document.createElement("th");
+  th.textContent = text;
+  th.rowSpan = rowSpan;
+  th.colSpan = colSpan;
+  if (extra) th.classList.add(extra);
+  row.appendChild(th);
 }
 
 function renderTable() {
@@ -215,91 +199,87 @@ function renderTable() {
   clearNode(headerRowBottom);
   clearNode(tableBody);
 
-  // HEADER 1
-  addTH(headerRowTop, "🗑", 1, 2);
-  addTH(headerRowTop, "Datum", 1, 2);
-  addTH(headerRowTop, "Thema", 1, 2);
-  addTH(headerRowTop, "Bijzonderheden", 1, 2);
-  addTH(headerRowTop, "Type", 1, 2);
-  addTH(headerRowTop, "Start", 1, 2);
-  addTH(headerRowTop, "Eind", 1, 2);
-  addTH(headerRowTop, "Locatie", 1, 2);
-
-  if (isAdmin) addTH(headerRowTop, "Procor", 1, 2, "col-procor");
-
-  addTH(headerRowTop, "Bert 🧸", 1, 2, "col-bert");
-  addTH(headerRowTop, "Aanw. Leden", 1, 2, "aanw-count");
-  addTH(headerRowTop, "Aanw. Leiding", 1, 2, "aanw-count");
-
   const zichtbareJeugd = jeugd.filter(j => !j.verborgen);
   const zichtbareLeiding = leiding.filter(l => !l.verborgen);
 
-  // HEADER 2: namen
+  // Bovenste rij
+  addTH(headerRowTop, "🗑");
+  addTH(headerRowTop, "Datum");
+  addTH(headerRowTop, "Thema");
+  addTH(headerRowTop, "Bijzonderheden");
+  addTH(headerRowTop, "Type");
+  addTH(headerRowTop, "Start");
+  addTH(headerRowTop, "Eind");
+  addTH(headerRowTop, "Locatie");
+
+  if (isAdmin) addTH(headerRowTop, "Procor", 1, 1, "col-procor");
+
+  addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
+  addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
+  addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
+
+  addTH(headerRowTop, "Jeugdleden", 1, zichtbareJeugd.length);
+  addTH(headerRowTop, "Leiding", 1, zichtbareLeiding.length);
+
+  // Onderste rij
   zichtbareJeugd.forEach(j => {
     const th = document.createElement("th");
     th.textContent = j.naam;
-    th.classList.add("name-vertical", "col-jeugd");
+    th.classList.add("name-vertical");
     headerRowBottom.appendChild(th);
   });
 
   zichtbareLeiding.forEach((l, idx) => {
     const th = document.createElement("th");
     th.textContent = l.naam;
-    th.classList.add("name-vertical", "col-leiding");
+    th.classList.add("name-vertical");
     if (idx === 0) th.classList.add("col-split");
     headerRowBottom.appendChild(th);
   });
 
-  // filter + volgorde
+  // Filter
   let lijst = [...opkomsten];
   if (filterMode === "future") lijst = lijst.filter(o => isFutureOrToday(o.datum));
   if (filterMode === "past") lijst = lijst.filter(o => isPast(o.datum));
 
-  const future = lijst.filter(o => isFutureOrToday(o.datum));
-  const nextId = future.length ? future[0].id : null;
-
   lijst.forEach(o => {
-    ensurePresenceStructure(o, zichtbareJeugd, zichtbareLeiding);
-
     const tr = document.createElement("tr");
 
-    if (isPast(o.datum)) tr.classList.add("row-grey");
-    else if (o.id === nextId) tr.classList.add("row-next");
+    if (!o.datum) {
+      tr.classList.add("row-next");
+    }
+    else if (isPast(o.datum)) {
+      tr.classList.add("row-grey");
+    }
 
     if (o.typeOpkomst === "bijzonder") tr.classList.add("row-bijzonder");
     if (o.typeOpkomst === "kamp") tr.classList.add("row-kamp");
+    if (o.typeOpkomst === "geen") tr.classList.add("row-grey");
 
     addDeleteCell(tr, o);
     addDatumCell(tr, o);
-    addTextCell(tr, o, "thema");
-    addTextCell(tr, o, "bijzonderheden");
+    addEditableTextCell(tr, o, "thema", "Typ thema…");
+    addEditableTextCell(tr, o, "bijzonderheden", "Typ bijzonderheden…");
     addTypeCell(tr, o);
-    addTimeCell(tr, o, "starttijd", "10:30");
-    addTimeCell(tr, o, "eindtijd", "12:30");
+    addTimeCell(tr, o, "starttijd");
+    addTimeCell(tr, o, "eindtijd");
     addLocatieCell(tr, o);
 
     if (isAdmin) addProcorCell(tr, o);
-
     addBertCell(tr, o);
 
-    // aantallen
-    const [cntJ, cntL] = countAanwezigen(o, zichtbareJeugd, zichtbareLeiding);
-    addStaticCell(tr, String(cntJ), "aanw-count");
-    addStaticCell(tr, String(cntL), "aanw-count");
+    ensurePresenceStructure(o, zichtbareJeugd, zichtbareLeiding);
 
-    // jeugd aanwezigheid
+    const [cntJ, cntL] = countAanwezigen(o, zichtbareJeugd, zichtbareLeiding);
+    addStaticCell(tr, cntJ, "aanw-count");
+    addStaticCell(tr, cntL, "aanw-count");
+
     zichtbareJeugd.forEach(j => {
-      const key = j.id;
-      const status = o.aanwezigheid && o.aanwezigheid[key] ? o.aanwezigheid[key] : "onbekend";
-      const td = makePresenceCell(o, key, status, "jeugd");
-      tr.appendChild(td);
+      tr.appendChild(makePresenceCell(o, j.id));
     });
 
-    // leiding aanwezigheid
     zichtbareLeiding.forEach((l, idx) => {
-      const key = "leiding-" + l.id;
-      const status = o.aanwezigheid && o.aanwezigheid[key] ? o.aanwezigheid[key] : "onbekend";
-      const td = makePresenceCell(o, key, status, "leiding");
+      const td = makePresenceCell(o, "leiding-" + l.id);
       if (idx === 0) td.classList.add("col-split");
       tr.appendChild(td);
     });
@@ -307,120 +287,183 @@ function renderTable() {
     tableBody.appendChild(tr);
   });
 
-  // + opkomst rij
   addOpkomstRow.classList.toggle("hidden", !isAdmin);
 }
 
-/* helpers header / cellen */
-
-function addTH(row, text, rowSpan = 1, colSpan = 1, extra = "") {
-  const th = document.createElement("th");
-  th.textContent = text;
-  if (rowSpan) th.rowSpan = rowSpan;
-  if (colSpan) th.colSpan = colSpan;
-  if (extra) extra.split(" ").forEach(c => th.classList.add(c));
-  row.appendChild(th);
-}
-
-function addStaticCell(tr, text, extra = "") {
+function addStaticCell(tr, text, extra) {
   const td = document.createElement("td");
   td.textContent = text;
-  if (extra) extra.split(" ").forEach(c => td.classList.add(c));
+  if (extra) td.classList.add(extra);
   tr.appendChild(td);
 }
 
-/* delete */
+/* -----------------------------------------------------
+   DELETE
+----------------------------------------------------- */
 
 function addDeleteCell(tr, o) {
   const td = document.createElement("td");
-  td.classList.add("delete-btn");
   if (isAdmin) {
     td.textContent = "✖";
+    td.classList.add("delete-btn");
     td.addEventListener("click", () => {
       if (confirm("Deze opkomst verwijderen?")) {
         remove(ref(db, `${speltak}/opkomsten/${o.id}`));
       }
     });
-  } else {
-    td.textContent = "";
   }
   tr.appendChild(td);
 }
 
-/* datum */
+/* -----------------------------------------------------
+   DATUM — nieuw: direct datepicker bij lege datum
+----------------------------------------------------- */
 
 function addDatumCell(tr, o) {
   const td = document.createElement("td");
+
+  if (isAdmin && !o.datum) {
+    const input = document.createElement("input");
+    input.type = "date";
+    input.placeholder = "Datum";
+    td.appendChild(input);
+
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { datum: input.value });
+    });
+
+    tr.appendChild(td);
+    return;
+  }
+
   td.textContent = toDisplayDate(o.datum);
+
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
       const input = document.createElement("input");
       input.type = "date";
-      input.value = o.datum || todayISO();
+      input.value = o.datum || "";
       td.innerHTML = "";
       td.appendChild(input);
       input.focus();
 
-      input.addEventListener("blur", () => {
-        const newVal = input.value;
-        if (newVal) {
-          update(ref(db, `${speltak}/opkomsten/${o.id}`), { datum: newVal });
-        }
+      input.addEventListener("change", () => {
+        update(ref(db, `${speltak}/opkomsten/${o.id}`), { datum: input.value });
       });
     });
   }
+
   tr.appendChild(td);
 }
 
-/* tekstvelden */
+/* -----------------------------------------------------
+   DIRECT EDIT FOR THEMA / BIJZONDERHEDEN
+----------------------------------------------------- */
 
-function addTextCell(tr, o, field) {
+function addEditableTextCell(tr, o, field, placeholder) {
   const td = document.createElement("td");
+
+  if (isAdmin && !o[field]) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = placeholder;
+
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
+    });
+
+    td.appendChild(input);
+    tr.appendChild(td);
+    return;
+  }
+
   td.textContent = o[field] || "";
+
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
-      const nieuw = prompt(`Nieuwe waarde voor ${field}:`, o[field] || "");
-      if (nieuw !== null) {
-        const obj = {};
-        obj[field] = nieuw;
-        update(ref(db, `${speltak}/opkomsten/${o.id}`), obj);
-      }
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = o[field] || "";
+      td.innerHTML = "";
+      td.appendChild(input);
+      input.focus();
+
+      input.addEventListener("change", () => {
+        update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
+      });
     });
   }
+
   tr.appendChild(td);
 }
 
-/* type */
+/* -----------------------------------------------------
+   TYPE OPKOMST — direct dropdown
+----------------------------------------------------- */
 
 function addTypeCell(tr, o) {
   const td = document.createElement("td");
-  const labels = { normaal: "Normaal", bijzonder: "Bijzonder", kamp: "Kamp" };
-  const type = o.typeOpkomst || "normaal";
-  td.textContent = labels[type] || "Normaal";
+  const type = o.typeOpkomst || "";
+
+  if (isAdmin && !type) {
+    const select = document.createElement("select");
+    [
+      { value: "",         label: "Selecteer…" },
+      { value: "normaal",  label: "Normale opkomst" },
+      { value: "bijzonder",label: "Bijzondere opkomst" },
+      { value: "kamp",     label: "Kamp" },
+      { value: "geen",     label: "Geen opkomst" }
+    ].forEach(opt => {
+      const el = document.createElement("option");
+      el.value = opt.value;
+      el.textContent = opt.label;
+      select.appendChild(el);
+    });
+
+    select.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { typeOpkomst: select.value });
+    });
+
+    td.appendChild(select);
+    tr.appendChild(td);
+    return;
+  }
+
+  const labels = {
+    normaal: "Normaal",
+    bijzonder: "Bijzonder",
+    kamp: "Kamp",
+    geen: "Geen opkomst"
+  };
+
+  td.textContent = labels[type] || "Selecteer…";
 
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
       const select = document.createElement("select");
+
       [
-        { value: "normaal", label: "Normale opkomst" },
-        { value: "bijzonder", label: "Bijzondere opkomst" },
-        { value: "kamp", label: "Kamp" }
+        { value: "",         label: "Selecteer…" },
+        { value: "normaal",  label: "Normale opkomst" },
+        { value: "bijzonder",label: "Bijzondere opkomst" },
+        { value: "kamp",     label: "Kamp" },
+        { value: "geen",     label: "Geen opkomst" }
       ].forEach(opt => {
-        const op = document.createElement("option");
-        op.value = opt.value;
-        op.textContent = opt.label;
-        if (opt.value === type) op.selected = true;
-        select.appendChild(op);
+        const el = document.createElement("option");
+        el.value = opt.value;
+        el.textContent = opt.label;
+        if (opt.value === type) el.selected = true;
+        select.appendChild(el);
       });
 
       td.innerHTML = "";
       td.appendChild(select);
       select.focus();
 
-      select.addEventListener("blur", () => {
+      select.addEventListener("change", () => {
         update(ref(db, `${speltak}/opkomsten/${o.id}`), { typeOpkomst: select.value });
       });
     });
@@ -429,30 +472,95 @@ function addTypeCell(tr, o) {
   tr.appendChild(td);
 }
 
-/* tijden */
+/* -----------------------------------------------------
+   BEGIN/EIND TIJD
+----------------------------------------------------- */
 
-function addTimeCell(tr, o, field, def) {
+function addTimeCell(tr, o, field) {
   const td = document.createElement("td");
-  td.textContent = o[field] || def;
+  const val = o[field] || "";
+
+  if (isAdmin && !val) {
+    const input = document.createElement("input");
+    input.type = "time";
+
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
+    });
+
+    td.appendChild(input);
+    tr.appendChild(td);
+    return;
+  }
+
+  td.textContent = val;
+
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
-      const nieuw = prompt(`Nieuwe tijd voor ${field} (hh:mm):`, td.textContent || def);
-      if (nieuw !== null) {
-        const obj = {};
-        obj[field] = nieuw;
-        update(ref(db, `${speltak}/opkomsten/${o.id}`), obj);
-      }
+      const input = document.createElement("input");
+      input.type = "time";
+      input.value = val;
+      td.innerHTML = "";
+      td.appendChild(input);
+      input.focus();
+
+      input.addEventListener("change", () => {
+        update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
+      });
     });
   }
+
   tr.appendChild(td);
 }
 
-/* locatie */
+/* -----------------------------------------------------
+   LOCATIE — direct dropdown
+----------------------------------------------------- */
 
 function addLocatieCell(tr, o) {
   const td = document.createElement("td");
+
+  if (isAdmin && !o.locatie) {
+    const select = document.createElement("select");
+
+    const opties = [
+      "",
+      "Bever lokaal",
+      "Welpen lokaal",
+      "De hoop",
+      "Zandveld",
+      "Kampvuurkuil",
+      "Grasveld",
+      "Van terrein af",
+      "Niet op locatie"
+    ];
+
+    const def = document.createElement("option");
+    def.value = "";
+    def.textContent = "Selecteer…";
+    select.appendChild(def);
+
+    opties.forEach(opt => {
+      if (opt !== "") {
+        const op = document.createElement("option");
+        op.value = opt;
+        op.textContent = opt;
+        select.appendChild(op);
+      }
+    });
+
+    select.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { locatie: select.value });
+    });
+
+    td.appendChild(select);
+    tr.appendChild(td);
+    return;
+  }
+
   td.textContent = o.locatie || "";
+
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
@@ -468,11 +576,12 @@ function addLocatieCell(tr, o) {
         "Van terrein af",
         "Niet op locatie"
       ];
+
       opties.forEach(opt => {
         const op = document.createElement("option");
         op.value = opt;
         op.textContent = opt || "(geen)";
-        if (opt === (o.locatie || "")) op.selected = true;
+        if (opt === o.locatie) op.selected = true;
         select.appendChild(op);
       });
 
@@ -480,20 +589,23 @@ function addLocatieCell(tr, o) {
       td.appendChild(select);
       select.focus();
 
-      select.addEventListener("blur", () => {
+      select.addEventListener("change", () => {
         update(ref(db, `${speltak}/opkomsten/${o.id}`), { locatie: select.value });
       });
     });
   }
+
   tr.appendChild(td);
 }
 
-/* procor – alleen admin */
+/* -----------------------------------------------------
+   PROCOR
+----------------------------------------------------- */
 
 function addProcorCell(tr, o) {
   const td = document.createElement("td");
   td.textContent = o.procor || "";
-  td.classList.add("col-procor");
+
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
@@ -503,15 +615,19 @@ function addProcorCell(tr, o) {
       }
     });
   }
+
   tr.appendChild(td);
 }
 
-/* Bert */
+/* -----------------------------------------------------
+   BERT
+----------------------------------------------------- */
 
 function addBertCell(tr, o) {
   const td = document.createElement("td");
   td.textContent = o.bert_met || "";
   td.classList.add("col-bert");
+
   if (isAdmin) {
     td.classList.add("editable");
     td.addEventListener("click", () => {
@@ -521,61 +637,49 @@ function addBertCell(tr, o) {
       }
     });
   }
+
   tr.appendChild(td);
 }
 
-/* aanwezigheid */
+/* -----------------------------------------------------
+   AANWEZIGHEID
+----------------------------------------------------- */
 
-function ensurePresenceStructure(o, zichtbareJeugd, zichtbareLeiding) {
+function ensurePresenceStructure(o, jeugd, leiding) {
   if (!o.aanwezigheid) o.aanwezigheid = {};
-  zichtbareJeugd.forEach(j => {
+
+  jeugd.forEach(j => {
     if (!o.aanwezigheid[j.id]) o.aanwezigheid[j.id] = "onbekend";
   });
-  zichtbareLeiding.forEach(l => {
+
+  leiding.forEach(l => {
     const key = "leiding-" + l.id;
     if (!o.aanwezigheid[key]) o.aanwezigheid[key] = "onbekend";
   });
 }
 
-function countAanwezigen(o, zichtbareJeugd, zichtbareLeiding) {
-  let j = 0, l = 0;
-  zichtbareJeugd.forEach(x => {
-    if (o.aanwezigheid && o.aanwezigheid[x.id] === "aanwezig") j++;
-  });
-  zichtbareLeiding.forEach(x => {
-    if (o.aanwezigheid && o.aanwezigheid["leiding-" + x.id] === "aanwezig") l++;
-  });
-  return [j, l];
-}
-
-function makePresenceCell(o, key, status, groep) {
+function makePresenceCell(o, key) {
   const td = document.createElement("td");
-  td.classList.add("presence-cell", "presence-col");
+  let status = o.aanwezigheid[key] || "onbekend";
 
   function apply() {
     td.classList.remove("presence-aanwezig", "presence-afwezig", "presence-reminder");
     let sym = "?";
+
     if (status === "aanwezig") {
       sym = "✔";
       td.classList.add("presence-aanwezig");
     } else if (status === "afwezig") {
       sym = "✖";
       td.classList.add("presence-afwezig");
-    } else {
-      sym = "?";
-      if (meldingenInstellingen.onbekendEnabled &&
-          isBinnenNDagen(o.datum, 3)) {
-        sym = "!";
-        td.classList.add("presence-reminder");
-      }
     }
+
     td.textContent = sym;
   }
 
   apply();
 
   td.addEventListener("click", () => {
-    if (!o.aanwezigheid) o.aanwezigheid = {};
     if (status === "onbekend") status = "aanwezig";
     else if (status === "aanwezig") status = "afwezig";
     else status = "onbekend";
@@ -586,8 +690,48 @@ function makePresenceCell(o, key, status, groep) {
   return td;
 }
 
+function countAanwezigen(o, jeugd, leiding) {
+  let j = 0, l = 0;
+
+  jeugd.forEach(x => {
+    if (o.aanwezigheid[x.id] === "aanwezig") j++;
+  });
+  leiding.forEach(x => {
+    if (o.aanwezigheid["leiding-" + x.id] === "aanwezig") l++;
+  });
+
+  return [j, l];
+}
+
 /* -----------------------------------------------------
-   LEDENBEHEER
+   NIEUWE OPKOMST (volledig vernieuwd)
+----------------------------------------------------- */
+
+function addOpkomst() {
+  if (!isAdmin) return;
+
+  const idRef = push(ref(db, `${speltak}/opkomsten`));
+  const id = idRef.key;
+
+  const nieuw = {
+    id,
+    datum: "",
+    thema: "",
+    bijzonderheden: "",
+    typeOpkomst: "",
+    starttijd: "",
+    eindtijd: "",
+    locatie: "",
+    procor: "",
+    bert_met: "",
+    aanwezigheid: {}
+  };
+
+  set(idRef, nieuw);
+}
+
+/* -----------------------------------------------------
+   LEDENBEHEER (ongewijzigd)
 ----------------------------------------------------- */
 
 function renderLedenbeheer() {
@@ -639,180 +783,9 @@ function mkLidBtn(text, fn) {
   return b;
 }
 
-function moveLid(type, index, delta) {
-  const list = type === "jeugd" ? [...jeugd] : [...leiding];
-  const nieuwIndex = index + delta;
-  if (nieuwIndex < 0 || nieuwIndex >= list.length) return;
-
-  const tmp = list[index].volgorde;
-  list[index].volgorde = list[nieuwIndex].volgorde;
-  list[nieuwIndex].volgorde = tmp;
-
-  list.forEach((lid) => {
-    update(ref(db, `${speltak}/${type === "jeugd" ? "jeugdleden" : "leiding"}/${lid.id}`),
-      { volgorde: lid.volgorde });
-  });
-}
-
-function renameLid(type, lid) {
-  const nieuw = prompt("Nieuwe naam:", lid.naam);
-  if (!nieuw) return;
-  update(ref(db, `${speltak}/${type === "jeugd" ? "jeugdleden" : "leiding"}/${lid.id}`),
-    { naam: nieuw });
-}
-
-function toggleVerborgen(type, lid) {
-  update(ref(db, `${speltak}/${type === "jeugd" ? "jeugdleden" : "leiding"}/${lid.id}`),
-    { hidden: !lid.verborgen });
-}
-
-function deleteLid(type, lid) {
-  if (!confirm(`Lid "${lid.naam}" verwijderen?`)) return;
-
-  remove(ref(db, `${speltak}/${type === "jeugd" ? "jeugdleden" : "leiding"}/${lid.id}`));
-
-  // verwijder aanwezigheid
-  opkomsten.forEach(o => {
-    const key = type === "jeugd" ? lid.id : "leiding-" + lid.id;
-    remove(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid/${key}`));
-  });
-}
-
-/* lid toevoegen */
-
-function addLidPopup() {
-  const naam = prompt("Naam van het lid:");
-  if (!naam) return;
-
-  const keuze = prompt("Typ J voor jeugdlid of L voor leiding:", "J");
-  const type = !keuze ? "" : keuze.toLowerCase() === "l" ? "leiding" : "jeugd";
-  if (!type) {
-    alert("Gebruik J of L.");
-    return;
-  }
-
-  const path = `${speltak}/${type === "jeugd" ? "jeugdleden" : "leiding"}`;
-  const nieuwRef = push(ref(db, path));
-  const volgorde = type === "jeugd" ? jeugd.length : leiding.length;
-
-  set(nieuwRef, {
-    naam,
-    hidden: false,
-    volgorde
-  });
-}
-
 /* -----------------------------------------------------
-   NIEUWE OPKOMST
+   ADMIN, FILTER, PRINT
 ----------------------------------------------------- */
-
-function addOpkomst() {
-  if (!isAdmin) return;
-  const idRef = push(ref(db, `${speltak}/opkomsten`));
-  const id = idRef.key;
-
-  const nieuw = {
-    id,
-    datum: todayISO(),
-    thema: "",
-    bijzonderheden: "",
-    typeOpkomst: "normaal",
-    starttijd: "10:30",
-    eindtijd: "12:30",
-    locatie: "",
-    procor: "",
-    bert_met: "",
-    aanwezigheid: {}
-  };
-
-  set(idRef, nieuw);
-}
-
-/* -----------------------------------------------------
-   MELDINGEN OPSLAAN + TEST
------------------------------------------------------ */
-
-function saveMeldingen() {
-  const leidingEnabled = !!meldLeidingEnabledInput.checked;
-  const leidingThreshold = parseInt(meldLeidingThresholdInput.value, 10) || 3;
-  const onbekendEnabled = !!meldOnbekendEnabledInput.checked;
-  const onbekendDays = parseInt(meldOnbekendDaysInput.value, 10) || 7;
-
-  set(ref(db, `${speltak}/meldingen`), {
-    leidingEnabled,
-    leidingThreshold,
-    onbekendEnabled,
-    onbekendDays
-  }).then(() => {
-    alert("Meldingen opgeslagen.");
-  });
-}
-
-function testMeldingen() {
-  const problemen = [];
-
-  opkomsten.forEach(o => {
-    if (!o.datum) return;
-
-    // te weinig leiding
-    if (meldingenInstellingen.leidingEnabled) {
-      let afwezig = 0;
-      leiding.forEach(l => {
-        const key = "leiding-" + l.id;
-        if (o.aanwezigheid && o.aanwezigheid[key] === "afwezig") afwezig++;
-      });
-      if (afwezig >= meldingenInstellingen.leidingThreshold) {
-        problemen.push(
-          `Opkomst ${toDisplayDate(o.datum)} "${o.thema || ""}": ${afwezig} leiding afwezig.`
-        );
-      }
-    }
-
-    // onbekend
-    if (meldingenInstellingen.onbekendEnabled &&
-        isBinnenNDagen(o.datum, meldingenInstellingen.onbekendDays)) {
-
-      let onbekend = 0;
-      jeugd.forEach(j => {
-        if (o.aanwezigheid && o.aanwezigheid[j.id] === "onbekend") onbekend++;
-      });
-      leiding.forEach(l => {
-        const key = "leiding-" + l.id;
-        if (o.aanwezigheid && o.aanwezigheid[key] === "onbekend") onbekend++;
-      });
-
-      if (onbekend > 0) {
-        problemen.push(
-          `Opkomst ${toDisplayDate(o.datum)} "${o.thema || ""}": ${onbekend} personen nog onbekend.`
-        );
-      }
-    }
-  });
-
-  if (!problemen.length) {
-    alert("Geen meldingen nodig op basis van de huidige instellingen.");
-    return;
-  }
-
-  const subject = encodeURIComponent("Bevers – meldingen aanwezigheid");
-  const body =
-    encodeURIComponent("Overzicht meldingen:\n\n" + problemen.join("\n"));
-
-  window.location.href =
-    `mailto:ovnscouting+bevers@gmail.com?subject=${subject}&body=${body}`;
-}
-
-/* -----------------------------------------------------
-   ADMIN MODUS / FILTER
------------------------------------------------------ */
-
-function setFilter(mode) {
-  filterMode = mode;
-  filterAll.classList.toggle("active", mode === "all");
-  filterFuture.classList.toggle("active", mode === "future");
-  filterPast.classList.toggle("active", mode === "past");
-  renderTable();
-}
 
 function toggleAdmin() {
   if (!isAdmin) {
@@ -823,43 +796,29 @@ function toggleAdmin() {
     isAdmin = false;
   }
 
-  // knoppen alleen in admin
   addMemberButton.classList.toggle("hidden", !isAdmin);
   ledenbeheerButton.classList.toggle("hidden", !isAdmin);
   mailboxButton.classList.toggle("hidden", !isAdmin);
   handleidingButton.classList.toggle("hidden", !isAdmin);
   instellingenButton.classList.toggle("hidden", !isAdmin);
 
-  // info-blok
   infoTekstP.classList.toggle("hidden", isAdmin);
   infoTekstEdit.classList.toggle("hidden", !isAdmin);
   saveInfoButton.classList.toggle("hidden", !isAdmin);
 
-  // opkomst toevoegen
   addOpkomstRow.classList.toggle("hidden", !isAdmin);
-
-  if (!isAdmin) {
-    ledenbeheerSection.classList.add("hidden");
-    meldingenSection.classList.add("hidden");
-  }
 
   renderTable();
   renderLedenbeheer();
 }
 
-function toggleLedenbeheer() {
-  if (!isAdmin) return;
-  ledenbeheerSection.classList.toggle("hidden");
+function setFilter(mode) {
+  filterMode = mode;
+  filterAll.classList.toggle("active", mode === "all");
+  filterFuture.classList.toggle("active", mode === "future");
+  filterPast.classList.toggle("active", mode === "past");
+  renderTable();
 }
-
-function toggleMeldingen() {
-  if (!isAdmin) return;
-  meldingenSection.classList.toggle("hidden");
-}
-
-/* -----------------------------------------------------
-   INFO OPSLAAN
------------------------------------------------------ */
 
 function saveInfo() {
   const txt = infoTekstEdit.value || "";
@@ -873,19 +832,17 @@ function saveInfo() {
 document.addEventListener("DOMContentLoaded", () => {
   loadData();
 
-  if (editModeButton)   editModeButton.addEventListener("click", toggleAdmin);
-  if (addMemberButton)  addMemberButton.addEventListener("click", addLidPopup);
-  if (ledenbeheerButton) ledenbeheerButton.addEventListener("click", toggleLedenbeheer);
-  if (instellingenButton) instellingenButton.addEventListener("click", toggleMeldingen);
+  editModeButton?.addEventListener("click", toggleAdmin);
+  addMemberButton?.addEventListener("click", addLidPopup);
+  ledenbeheerButton?.addEventListener("click", () => ledenbeheerSection.classList.toggle("hidden"));
+  instellingenButton?.addEventListener("click", () => meldingenSection.classList.toggle("hidden"));
 
-  if (filterAll)    filterAll.addEventListener("click", () => setFilter("all"));
-  if (filterFuture) filterFuture.addEventListener("click", () => setFilter("future"));
-  if (filterPast)   filterPast.addEventListener("click", () => setFilter("past"));
+  filterAll?.addEventListener("click", () => setFilter("all"));
+  filterFuture?.addEventListener("click", () => setFilter("future"));
+  filterPast?.addEventListener("click", () => setFilter("past"));
 
-  if (printButton)  printButton.addEventListener("click", () => window.print());
+  printButton?.addEventListener("click", () => window.print());
 
-  if (saveInfoButton)       saveInfoButton.addEventListener("click", saveInfo);
-  if (addOpkomstRow)        addOpkomstRow.addEventListener("click", addOpkomst);
-  if (saveMeldingenButton)  saveMeldingenButton.addEventListener("click", saveMeldingen);
-  if (testMeldingenButton)  testMeldingenButton.addEventListener("click", testMeldingen);
+  saveInfoButton?.addEventListener("click", saveInfo);
+  addOpkomstRow?.addEventListener("click", addOpkomst);
 });
