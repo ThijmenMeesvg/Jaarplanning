@@ -378,4 +378,8 @@ th.name-vertical {
   .aanw-column {
     display: none !important;
   }
-}
+   }
+   .presence-col:nth-of-type(even) {
+       background: rgba(0, 0, 0, 0.04);
+   }
+
