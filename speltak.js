@@ -243,16 +243,23 @@ function renderTable() {
           th.classList.add("col-leiding", "name-vertical", "col-split");
           headBot.appendChild(th);
       
-          zichtbareLeiding.slice(1).forEach(l => {
-              const th2 = document.createElement("th");
-              th2.textContent = l.naam;
-              th2.classList.add("col-leiding", "name-vertical");
-              headBot.appendChild(th2);
-          });
-      }
-      }
-    });
-  }
+         const zichtbareLeiding = leiding.filter(l => !l.hidden);
+
+         if (zichtbareLeiding.length > 0) {
+             const first = zichtbareLeiding[0];
+         
+             const th = document.createElement("th");
+             th.textContent = first.naam;
+             th.classList.add("col-leiding", "name-vertical", "col-split");
+             headBot.appendChild(th);
+         
+             zichtbareLeiding.slice(1).forEach(l => {
+                 const th2 = document.createElement("th");
+                 th2.textContent = l.naam;
+                 th2.classList.add("col-leiding", "name-vertical");
+                 headBot.appendChild(th2);
+             });
+         }
 
   let lijst = [...opkomsten];
   if (filterMode==="future") lijst=lijst.filter(o=>o.datum>=todayISO);
@@ -296,8 +303,10 @@ function renderTable() {
     // Aanwezigheidscellen
     jeugd.forEach(j=>{
       if (!j.hidden){
-        tr.appendChild(makePresenceCell(o,j.id,"jeugd"));
-        td.classList.add("presence-col");
+        const cell = makePresenceCell(o, j.id, "jeugd");
+        cell.classList.add("presence-col");
+        tr.appendChild(cell);
+
           }
     });
 
@@ -307,9 +316,7 @@ function renderTable() {
         const td=makePresenceCell(o,key,"leiding");
         if (idx===0) td.classList.add("col-split");
         tr.appendChild(td);
-        if (display !== "!" && td.classList.contains("presence-reminder")) {
-        td.classList.remove("presence-reminder");
-}
+     }
 
       }
     });
