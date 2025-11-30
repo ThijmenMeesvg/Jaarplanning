@@ -1,6 +1,4 @@
-// ------------------------------------------------------
-// speltak.js — Perfecte, opgeschoonde, stabiele versie
-// ------------------------------------------------------
+// speltak.js – verbeterde versie met directe dropdowns, datepickers & betere headerlogica
 
 import {
   initializeApp
@@ -16,9 +14,9 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// ------------------------------------------------------
-// FIREBASE INIT
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   FIREBASE INIT
+----------------------------------------------------- */
 
 const firebaseConfig = {
   apiKey: "AIzaSyAZN4QdTuOpk8lEKsyPuhynqZ9-GJLDE0s",
@@ -33,9 +31,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ------------------------------------------------------
-// GLOBAL STATE
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   GLOBALE STATE
+----------------------------------------------------- */
 
 const body = document.body;
 const speltak = body.dataset.speltak || "bevers";
@@ -57,47 +55,46 @@ let meldingenInstellingen = {
   onbekendDays: 7
 };
 
-// ------------------------------------------------------
-// DOM ELEMENTS
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   DOM ELEMENTEN
+----------------------------------------------------- */
 
-const headerRowTop = document.getElementById("headerRowTop");
-const tableBody = document.getElementById("tableBody");
-const addOpkomstRow = document.getElementById("addOpkomstRow");
+const headerRowTop    = document.getElementById("headerRowTop");
+const tableBody       = document.getElementById("tableBody");
+const addOpkomstRow   = document.getElementById("addOpkomstRow");
 
-const editModeButton = document.getElementById("editModeButton");
-const addMemberButton = document.getElementById("addMemberButton");
+const editModeButton    = document.getElementById("editModeButton");
+const addMemberButton   = document.getElementById("addMemberButton");
 const ledenbeheerButton = document.getElementById("ledenbeheerButton");
-const mailboxButton = document.getElementById("mailboxButton");
+const mailboxButton     = document.getElementById("mailboxButton");
 const handleidingButton = document.getElementById("handleidingButton");
-const instellingenButton = document.getElementById("instellingenButton");
+const instellingenButton= document.getElementById("instellingenButton");
 
-const filterAll = document.getElementById("filterAll");
+const filterAll    = document.getElementById("filterAll");
 const filterFuture = document.getElementById("filterFuture");
-const filterPast = document.getElementById("filterPast");
-const printButton = document.getElementById("printButton");
+const filterPast   = document.getElementById("filterPast");
+const printButton  = document.getElementById("printButton");
 
-const infoTekstP = document.getElementById("infotekst");
-const infoTekstEdit = document.getElementById("infotekst_edit");
+const infoTekstP     = document.getElementById("infotekst");
+const infoTekstEdit  = document.getElementById("infotekst_edit");
 const saveInfoButton = document.getElementById("saveInfoButton");
 
-const ledenbeheerSection = document.getElementById("ledenbeheer");
-const ledenbeheerJeugdList = document.getElementById("ledenbeheerJeugd");
+const ledenbeheerSection     = document.getElementById("ledenbeheer");
+const ledenbeheerJeugdList   = document.getElementById("ledenbeheerJeugd");
 const ledenbeheerLeidingList = document.getElementById("ledenbeheerLeiding");
 
-const meldingenSection = document.getElementById("meldingen");
-const meldLeidingEnabledInput = document.getElementById("meldLeidingEnabled");
+const meldLeidingEnabledInput   = document.getElementById("meldLeidingEnabled");
 const meldLeidingThresholdInput = document.getElementById("meldLeidingThreshold");
-const meldOnbekendEnabledInput = document.getElementById("meldOnbekendEnabled");
-const meldOnbekendDaysInput = document.getElementById("meldOnbekendDays");
-const saveMeldingenButton = document.getElementById("saveMeldingenButton");
+const meldOnbekendEnabledInput  = document.getElementById("meldOnbekendEnabled");
+const meldOnbekendDaysInput     = document.getElementById("meldOnbekendDays");
+const meldingenSaveButton       = document.getElementById("meldingenSaveButton");
 
-// ------------------------------------------------------
-// DATE HELPERS
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   HANDIGE DATUMFUNCTIES
+----------------------------------------------------- */
 
 function todayISO() {
-  return new Date().toISOString().split("T")[0];
+  return new Date().toISOString().slice(0, 10);
 }
 
 function toDisplayDate(iso) {
@@ -121,77 +118,109 @@ function isFutureOrToday(iso) {
   return iso && iso >= todayISO();
 }
 
-// ------------------------------------------------------
-// LOAD DATA
-// ------------------------------------------------------
+function isBinnenNDagen(iso, n) {
+  if (!iso) return false;
+  const doel = new Date(iso + "T00:00:00");
+  const nu = new Date();
+  const diff = doel.getTime() - nu.getTime();
+  const dagen = diff / (1000 * 60 * 60 * 24);
+  return dagen >= 0 && dagen <= n;
+}
+
+/* -----------------------------------------------------
+   DATA LADEN
+----------------------------------------------------- */
 
 function loadData() {
-  const spRef = ref(db, speltak);
+  const rootRef = ref(db, speltak);
 
-  onValue(spRef, (snapshot) => {
+  onValue(rootRef, snapshot => {
     const data = snapshot.val() || {};
 
-    infoTekst = data.info || "";
-    infoTekstP.textContent = infoTekst || "Hier kun je belangrijke telefoonnummers neerzetten.";
-    infoTekstEdit.value = infoTekst;
+    infoTekst = data.infotekst || "";
 
-    // Load meldingen
-    const m = data.meldingen || {};
     meldingenInstellingen = {
-      leidingEnabled: !!m.leidingEnabled,
-      leidingThreshold: m.leidingThreshold ?? 3,
-      onbekendEnabled: !!m.onbekendEnabled,
-      onbekendDays: m.onbekendDays ?? 7
+      leidingEnabled: !!(data.meldingen && data.meldingen.leidingEnabled),
+      leidingThreshold: data.meldingen?.leidingThreshold ?? 3,
+      onbekendEnabled: !!(data.meldingen && data.meldingen.onbekendEnabled),
+      onbekendDays: data.meldingen?.onbekendDays ?? 7
     };
-    renderMeldingenInstellingen();
 
-    // Leden
     jeugd = Object.entries(data.jeugdleden || {}).map(([id, v]) => ({
       id,
       naam: v.naam,
       verborgen: !!v.hidden,
       volgorde: v.volgorde ?? 0
-    })).sort((a, b) => a.volgorde - b.volgorde);
+    })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
 
     leiding = Object.entries(data.leiding || {}).map(([id, v]) => ({
       id,
       naam: v.naam,
       verborgen: !!v.hidden,
       volgorde: v.volgorde ?? 0
-    })).sort((a, b) => a.volgorde - b.volgorde);
+    })).sort((a, b) => a.volgorde - b.volgorde || a.naam.localeCompare(b.naam));
 
-    // Opkomsten
     opkomsten = Object.entries(data.opkomsten || {})
       .map(([id, v]) => ({ id, ...v }))
       .sort((a, b) => compareISO(a.datum, b.datum));
 
+    renderInfoTekst();
+    renderMeldingenInstellingen();
     renderTable();
     renderLedenbeheer();
   });
 }
 
-// ------------------------------------------------------
-// FIXED: THIS FUNCTION WAS MISSING EARLIER
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   INFOTEKST
+----------------------------------------------------- */
 
-function renderMeldingenInstellingen() {
-  meldLeidingEnabledInput.checked = !!meldingenInstellingen.leidingEnabled;
-  meldLeidingThresholdInput.value = meldingenInstellingen.leidingThreshold;
-  meldOnbekendEnabledInput.checked = !!meldingenInstellingen.onbekendEnabled;
-  meldOnbekendDaysInput.value = meldingenInstellingen.onbekendDays;
+function renderInfoTekst() {
+  if (infoTekstP) infoTekstP.textContent = infoTekst;
+  if (infoTekstEdit) infoTekstEdit.value = infoTekst;
 }
 
-// ------------------------------------------------------
-// TABLE + HEADERS
-// ------------------------------------------------------
+function saveInfoTekst() {
+  const nieuwe = infoTekstEdit.value;
+  update(ref(db, speltak), { infotekst: nieuwe });
+}
+
+/* -----------------------------------------------------
+   RENDER MELDINGEN INSTELLINGEN
+----------------------------------------------------- */
+
+function renderMeldingenInstellingen() {
+  if (!meldLeidingEnabledInput) return;
+
+  meldLeidingEnabledInput.checked   = !!meldingenInstellingen.leidingEnabled;
+  meldLeidingThresholdInput.value   = meldingenInstellingen.leidingThreshold;
+  meldOnbekendEnabledInput.checked  = !!meldingenInstellingen.onbekendEnabled;
+  meldOnbekendDaysInput.value       = meldingenInstellingen.onbekendDays;
+}
+
+function saveMeldingenInstellingen() {
+  const obj = {
+    leidingEnabled: !!meldLeidingEnabledInput.checked,
+    leidingThreshold: Number(meldLeidingThresholdInput.value || 3),
+    onbekendEnabled: !!meldOnbekendEnabledInput.checked,
+    onbekendDays: Number(meldOnbekendDaysInput.value || 7)
+  };
+  update(ref(db, speltak + "/meldingen"), obj);
+}
+
+/* -----------------------------------------------------
+   HEADER / TABEL
+----------------------------------------------------- */
 
 function clearNode(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
-function addTH(row, text, extra = "") {
+function addTH(row, text, rowSpan = 1, colSpan = 1, extra = "") {
   const th = document.createElement("th");
   th.textContent = text;
+  th.rowSpan = rowSpan;
+  th.colSpan = colSpan;
   if (extra) th.classList.add(extra);
   row.appendChild(th);
 }
@@ -203,7 +232,7 @@ function renderTable() {
   const zichtbareJeugd = jeugd.filter(j => !j.verborgen);
   const zichtbareLeiding = leiding.filter(l => !l.verborgen);
 
-  // BASIS HEADERS
+  // Bovenste rij
   addTH(headerRowTop, "🗑");
   addTH(headerRowTop, "Datum");
   addTH(headerRowTop, "Thema");
@@ -213,54 +242,70 @@ function renderTable() {
   addTH(headerRowTop, "Eind");
   addTH(headerRowTop, "Locatie");
 
-  if (isAdmin) addTH(headerRowTop, "Procor", "col-procor");
+  if (isAdmin) addTH(headerRowTop, "Procor", 1, 1, "col-procor");
 
-  addTH(headerRowTop, "Bert 🧸", "col-bert");
-  addTH(headerRowTop, "Aanw. Leden", "aanw-count");
-  addTH(headerRowTop, "Aanw. Leiding", "aanw-count");
+  addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
+  addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
+  addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
 
-  // JEUGD HEADERS (blauw)
+  // Jeugdleden (één kolom per naam)
   zichtbareJeugd.forEach(j => {
     const th = document.createElement("th");
     th.textContent = j.naam;
-    th.classList.add("name-vertical", "presence-col", "zebra-jeugd");
+    th.classList.add("name-vertical", "presence-col");
     headerRowTop.appendChild(th);
   });
 
-  // DIVIDER
-  const divider = document.createElement("th");
-  divider.classList.add("col-split");
-  headerRowTop.appendChild(divider);
+  // Kolom voor kijkers (aantal extra kinderen / broertjes/zusjes)
+  const kijkersTh = document.createElement("th");
+  kijkersTh.textContent = "Kijkers";
+  kijkersTh.classList.add("presence-col");
+  headerRowTop.appendChild(kijkersTh);
 
-  // LEIDING HEADERS (geel)
+  // Divider tussen jeugd en leiding
+  if (zichtbareLeiding.length > 0) {
+    const divider = document.createElement("th");
+    divider.classList.add("col-split");
+    divider.textContent = "";
+    headerRowTop.appendChild(divider);
+  }
+
+  // Leiding (één kolom per naam)
   zichtbareLeiding.forEach(l => {
     const th = document.createElement("th");
     th.textContent = l.naam;
-    th.classList.add("name-vertical", "presence-col", "zebra-leiding");
+    th.classList.add("name-vertical", "presence-col");
     headerRowTop.appendChild(th);
   });
 
-  // FILTER
+  // Kolom voor extra leiding / stagiairs
+  const extraTh = document.createElement("th");
+  extraTh.textContent = "Extra";
+  extraTh.classList.add("presence-col");
+  headerRowTop.appendChild(extraTh);
+
+  // Filter
   let lijst = [...opkomsten];
   if (filterMode === "future") lijst = lijst.filter(o => isFutureOrToday(o.datum));
-  if (filterMode === "past") lijst = lijst.filter(o => isPast(o.datum));
+  if (filterMode === "past")   lijst = lijst.filter(o => isPast(o.datum));
 
-  // RENDER ROWS
   lijst.forEach(o => {
     const tr = document.createElement("tr");
 
-    // Row colors
-    if (!o.datum) tr.classList.add("row-next");
-    else if (isPast(o.datum)) tr.classList.add("row-grey");
+    if (!o.datum) {
+      tr.classList.add("row-next");
+    } else if (isPast(o.datum)) {
+      tr.classList.add("row-grey");
+    }
 
     if (o.typeOpkomst === "bijzonder") tr.classList.add("row-bijzonder");
-    if (o.typeOpkomst === "kamp") tr.classList.add("row-kamp");
-    if (o.typeOpkomst === "geen") tr.classList.add("row-grey");
+    if (o.typeOpkomst === "kamp")      tr.classList.add("row-kamp");
+    if (o.typeOpkomst === "geen")      tr.classList.add("row-grey");
 
     addDeleteCell(tr, o);
     addDatumCell(tr, o);
-    addEditableTextCell(tr, o, "thema", "Thema…");
-    addEditableTextCell(tr, o, "bijzonderheden", "Bijzonderheden…");
+    addEditableTextCell(tr, o, "thema", "Typ thema…");
+    addEditableTextCell(tr, o, "bijzonderheden", "Typ bijzonderheden…");
     addTypeCell(tr, o);
     addTimeCell(tr, o, "starttijd");
     addTimeCell(tr, o, "eindtijd");
@@ -272,23 +317,37 @@ function renderTable() {
     ensurePresenceStructure(o, zichtbareJeugd, zichtbareLeiding);
 
     const [cntJ, cntL] = countAanwezigen(o, zichtbareJeugd, zichtbareLeiding);
-    addStaticCell(tr, cntJ, "aanw-count");
-    addStaticCell(tr, cntL, "aanw-count");
 
-    // AANWEZIGHEID JEUGD (blauw)
+    // Extra aantallen uit de numerieke kolommen
+    const kijkersCount = Number(o.kijkers || 0);
+    const extraCount   = Number(o.extraLeiding || 0);
+
+    const totaalLeden   = cntJ + kijkersCount;
+    const totaalLeiding = cntL + extraCount;
+
+    addStaticCell(tr, totaalLeden,   "aanw-count");
+    addStaticCell(tr, totaalLeiding, "aanw-count");
+
+    // Jeugd-aanwezigheid
     zichtbareJeugd.forEach(j => {
       const td = makePresenceCell(o, j.id);
-      td.classList.add("presence-col", "zebra-jeugd");
+      td.classList.add("presence-col");
       tr.appendChild(td);
     });
 
-    // AANWEZIGHEID LEIDING (geel)
+    // Kolom "Kijkers"
+    addKijkersCell(tr, o);
+
+    // Leiding-aanwezigheid
     zichtbareLeiding.forEach((l, idx) => {
       const td = makePresenceCell(o, "leiding-" + l.id);
-      td.classList.add("presence-col", "zebra-leiding");
+      td.classList.add("presence-col");
       if (idx === 0) td.classList.add("col-split");
       tr.appendChild(td);
     });
+
+    // Kolom "Extra" voor extra leiding
+    addExtraLeidingCell(tr, o);
 
     tableBody.appendChild(tr);
   });
@@ -296,34 +355,72 @@ function renderTable() {
   addOpkomstRow.classList.toggle("hidden", !isAdmin);
 }
 
-// ------------------------------------------------------
-// HELPER CELL FUNCTIONS
-// ------------------------------------------------------
-
-function addStaticCell(tr, text, extra = "") {
+function addStaticCell(tr, text, extra) {
   const td = document.createElement("td");
   td.textContent = text;
   if (extra) td.classList.add(extra);
   tr.appendChild(td);
 }
 
+// Generieke helper voor numerieke kolommen (Kijkers / Extra)
+function addNumberCell(tr, o, field) {
+  const td = document.createElement("td");
+  td.classList.add("presence-col");
+
+  const value = Number(o[field] || 0);
+
+  if (isAdmin) {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "0";
+    input.step = "1";
+    input.value = value ? String(value) : "";
+    input.placeholder = "0";
+
+    input.addEventListener("change", () => {
+      const num = parseInt(input.value, 10) || 0;
+      const obj = {};
+      obj[field] = num;
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), obj);
+    });
+
+    td.appendChild(input);
+  } else {
+    td.textContent = value ? String(value) : "";
+  }
+
+  tr.appendChild(td);
+}
+
+function addKijkersCell(tr, o) {
+  addNumberCell(tr, o, "kijkers");
+}
+
+function addExtraLeidingCell(tr, o) {
+  addNumberCell(tr, o, "extraLeiding");
+}
+
+/* -----------------------------------------------------
+   DELETE
+----------------------------------------------------- */
+
 function addDeleteCell(tr, o) {
   const td = document.createElement("td");
   if (isAdmin) {
     td.textContent = "✖";
     td.classList.add("delete-btn");
-    td.onclick = () => {
+    td.addEventListener("click", () => {
       if (confirm("Deze opkomst verwijderen?")) {
         remove(ref(db, `${speltak}/opkomsten/${o.id}`));
       }
-    };
+    });
   }
   tr.appendChild(td);
 }
 
-// ------------------------------------------------------
-// Datum (met instant datepicker)
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   DATUM — nieuw: direct datepicker bij lege datum
+----------------------------------------------------- */
 
 function addDatumCell(tr, o) {
   const td = document.createElement("td");
@@ -331,8 +428,13 @@ function addDatumCell(tr, o) {
   if (isAdmin && !o.datum) {
     const input = document.createElement("input");
     input.type = "date";
-    input.onchange = () => update(ref(db, `${speltak}/opkomsten/${o.id}`), { datum: input.value });
+    input.placeholder = "Datum";
     td.appendChild(input);
+
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { datum: input.value });
+    });
+
     tr.appendChild(td);
     return;
   }
@@ -341,23 +443,26 @@ function addDatumCell(tr, o) {
 
   if (isAdmin) {
     td.classList.add("editable");
-    td.onclick = () => {
+    td.addEventListener("click", () => {
       const input = document.createElement("input");
       input.type = "date";
       input.value = o.datum || "";
       td.innerHTML = "";
       td.appendChild(input);
-      input.onchange = () =>
+      input.focus();
+
+      input.addEventListener("change", () => {
         update(ref(db, `${speltak}/opkomsten/${o.id}`), { datum: input.value });
-    };
+      });
+    });
   }
 
   tr.appendChild(td);
 }
 
-// ------------------------------------------------------
-// Tekstvelden (thema / bijzonderheden)
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   DIRECT EDIT FOR THEMA / BIJZONDERHEDEN
+----------------------------------------------------- */
 
 function addEditableTextCell(tr, o, field, placeholder) {
   const td = document.createElement("td");
@@ -366,8 +471,11 @@ function addEditableTextCell(tr, o, field, placeholder) {
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = placeholder;
-    input.onchange = () =>
+
+    input.addEventListener("change", () => {
       update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
+    });
+
     td.appendChild(input);
     tr.appendChild(td);
     return;
@@ -377,47 +485,49 @@ function addEditableTextCell(tr, o, field, placeholder) {
 
   if (isAdmin) {
     td.classList.add("editable");
-    td.onclick = () => {
+    td.addEventListener("click", () => {
       const input = document.createElement("input");
       input.type = "text";
       input.value = o[field] || "";
       td.innerHTML = "";
       td.appendChild(input);
-      input.onchange = () =>
+      input.focus();
+
+      input.addEventListener("change", () => {
         update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
-    };
+      });
+    });
   }
 
   tr.appendChild(td);
 }
 
-// ------------------------------------------------------
-// Dropdown Type
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   TYPE OPKOMST — direct dropdown
+----------------------------------------------------- */
 
 function addTypeCell(tr, o) {
   const td = document.createElement("td");
   const type = o.typeOpkomst || "";
 
-  const options = [
-    ["", "Selecteer…"],
-    ["normaal", "Normale opkomst"],
-    ["bijzonder", "Bijzondere opkomst"],
-    ["kamp", "Kamp"],
-    ["geen", "Geen opkomst"]
-  ];
-
   if (isAdmin && !type) {
     const select = document.createElement("select");
-    options.forEach(([v, l]) => {
-      const op = document.createElement("option");
-      op.value = v;
-      op.textContent = l;
-      select.appendChild(op);
+    [
+      { value: "",         label: "Selecteer…" },
+      { value: "normaal",  label: "Normale opkomst" },
+      { value: "bijzonder",label: "Bijzondere opkomst" },
+      { value: "kamp",     label: "Kamp" },
+      { value: "geen",     label: "Geen opkomst" }
+    ].forEach(opt => {
+      const el = document.createElement("option");
+      el.value = opt.value;
+      el.textContent = opt.label;
+      select.appendChild(el);
     });
 
-    select.onchange = () =>
+    select.addEventListener("change", () => {
       update(ref(db, `${speltak}/opkomsten/${o.id}`), { typeOpkomst: select.value });
+    });
 
     td.appendChild(select);
     tr.appendChild(td);
@@ -435,167 +545,127 @@ function addTypeCell(tr, o) {
 
   if (isAdmin) {
     td.classList.add("editable");
-    td.onclick = () => {
+    td.addEventListener("click", () => {
       const select = document.createElement("select");
-      options.forEach(([v, l]) => {
-        const op = document.createElement("option");
-        op.value = v;
-        op.textContent = l;
-        if (v === type) op.selected = true;
-        select.appendChild(op);
+
+      [
+        { value: "",         label: "Selecteer…" },
+        { value: "normaal",  label: "Normale opkomst" },
+        { value: "bijzonder",label: "Bijzondere opkomst" },
+        { value: "kamp",     label: "Kamp" },
+        { value: "geen",     label: "Geen opkomst" }
+      ].forEach(opt => {
+        const el = document.createElement("option");
+        el.value = opt.value;
+        el.textContent = opt.label;
+        if (opt.value === type) el.selected = true;
+        select.appendChild(el);
       });
 
       td.innerHTML = "";
       td.appendChild(select);
-      select.onchange = () =>
+      select.focus();
+
+      select.addEventListener("change", () => {
         update(ref(db, `${speltak}/opkomsten/${o.id}`), { typeOpkomst: select.value });
-    };
+      });
+    });
   }
 
   tr.appendChild(td);
 }
 
-// ------------------------------------------------------
-// Tijd
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   TIJD / LOCATIE / PROCoR / BERT
+----------------------------------------------------- */
 
 function addTimeCell(tr, o, field) {
   const td = document.createElement("td");
   const val = o[field] || "";
 
-  if (isAdmin && !val) {
+  if (isAdmin) {
     const input = document.createElement("input");
     input.type = "time";
-    input.onchange = () =>
-      update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
+    input.value = val;
     td.appendChild(input);
-    tr.appendChild(td);
-    return;
-  }
 
-  td.textContent = val;
-
-  if (isAdmin) {
-    td.classList.add("editable");
-    td.onclick = () => {
-      const input = document.createElement("input");
-      input.type = "time";
-      input.value = val;
-      td.innerHTML = "";
-      td.appendChild(input);
-      input.onchange = () =>
-        update(ref(db, `${speltak}/opkomsten/${o.id}`), { [field]: input.value });
-    };
+    input.addEventListener("change", () => {
+      const obj = {};
+      obj[field] = input.value;
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), obj);
+    });
+  } else {
+    td.textContent = val;
   }
 
   tr.appendChild(td);
 }
-
-// ------------------------------------------------------
-// Locatie
-// ------------------------------------------------------
 
 function addLocatieCell(tr, o) {
   const td = document.createElement("td");
-
-  const opties = [
-    "", "Bever lokaal", "Welpen lokaal", "De hoop", "Zandveld",
-    "Kampvuurkuil", "Grasveld", "Van terrein af", "Niet op locatie"
-  ];
-
-  if (isAdmin && !o.locatie) {
-    const select = document.createElement("select");
-    const def = document.createElement("option");
-    def.value = "";
-    def.textContent = "Selecteer…";
-    select.appendChild(def);
-
-    opties.forEach(opt => {
-      if (opt !== "") {
-        const op = document.createElement("option");
-        op.value = opt;
-        op.textContent = opt;
-        select.appendChild(op);
-      }
-    });
-
-    select.onchange = () =>
-      update(ref(db, `${speltak}/opkomsten/${o.id}`), { locatie: select.value });
-
-    td.appendChild(select);
-    tr.appendChild(td);
-    return;
-  }
-
-  td.textContent = o.locatie || "";
+  const val = o.locatie || "";
 
   if (isAdmin) {
-    td.classList.add("editable");
-    td.onclick = () => {
-      const select = document.createElement("select");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = val;
+    td.appendChild(input);
 
-      opties.forEach(opt => {
-        const op = document.createElement("option");
-        op.value = opt;
-        op.textContent = opt || "(geen)";
-        if (opt === o.locatie) op.selected = true;
-        select.appendChild(op);
-      });
-
-      td.innerHTML = "";
-      td.appendChild(select);
-      select.onchange = () =>
-        update(ref(db, `${speltak}/opkomsten/${o.id}`), { locatie: select.value });
-    };
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { locatie: input.value });
+    });
+  } else {
+    td.textContent = val;
   }
 
   tr.appendChild(td);
 }
-
-// ------------------------------------------------------
-// Procor
-// ------------------------------------------------------
 
 function addProcorCell(tr, o) {
   const td = document.createElement("td");
-  td.textContent = o.procor || "";
+  const val = o.procor || "";
 
   if (isAdmin) {
-    td.classList.add("editable");
-    td.onclick = () => {
-      const nieuw = prompt("Wie is Procor?", o.procor || "");
-      if (nieuw !== null)
-        update(ref(db, `${speltak}/opkomsten/${o.id}`), { procor: nieuw });
-    };
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = val;
+    td.appendChild(input);
+
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { procor: input.value });
+    });
+  } else {
+    td.textContent = val;
   }
 
+  td.classList.add("col-procor");
   tr.appendChild(td);
 }
-
-// ------------------------------------------------------
-// Bert
-// ------------------------------------------------------
 
 function addBertCell(tr, o) {
   const td = document.createElement("td");
-  td.textContent = o.bert_met || "";
-  td.classList.add("col-bert");
+  const val = o.bert_met || "";
 
   if (isAdmin) {
-    td.classList.add("editable");
-    td.onclick = () => {
-      const nieuw = prompt("Met wie gaat Bert mee naar huis?", o.bert_met || "");
-      if (nieuw !== null)
-        update(ref(db, `${speltak}/opkomsten/${o.id}`), { bert_met: nieuw });
-    };
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = val;
+    td.appendChild(input);
+
+    input.addEventListener("change", () => {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { bert_met: input.value });
+    });
+  } else {
+    td.textContent = val;
   }
 
+  td.classList.add("col-bert");
   tr.appendChild(td);
 }
 
-// ------------------------------------------------------
-// Aanwezigheid
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   AANWEZIGHEID
+----------------------------------------------------- */
 
 function ensurePresenceStructure(o, jeugd, leiding) {
   if (!o.aanwezigheid) o.aanwezigheid = {};
@@ -612,30 +682,29 @@ function ensurePresenceStructure(o, jeugd, leiding) {
 
 function makePresenceCell(o, key) {
   const td = document.createElement("td");
-  let status = o.aanwezigheid[key] || "onbekend";
+  const state = o.aanwezigheid[key] || "onbekend";
 
-  function apply() {
-    td.classList.remove("presence-aanwezig", "presence-afwezig");
-    let sym = "?";
-    if (status === "aanwezig") {
-      sym = "✔";
-      td.classList.add("presence-aanwezig");
-    } else if (status === "afwezig") {
-      sym = "✖";
-      td.classList.add("presence-afwezig");
-    }
-    td.textContent = sym;
-  }
-
-  apply();
-
-  td.onclick = () => {
-    if (status === "onbekend") status = "aanwezig";
-    else if (status === "aanwezig") status = "afwezig";
-    else status = "onbekend";
-
-    update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), { [key]: status });
+  const symbolen = {
+    aanwezig: "✔",
+    afwezig:  "✖",
+    onbekend: "?"
   };
+
+  td.textContent = symbolen[state];
+
+  if (isAdmin) {
+    td.classList.add("presence-editable");
+    td.addEventListener("click", () => {
+      const next = state === "aanwezig"
+        ? "afwezig"
+        : state === "afwezig"
+        ? "onbekend"
+        : "aanwezig";
+
+      o.aanwezigheid[key] = next;
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), { aanwezigheid: o.aanwezigheid });
+    });
+  }
 
   return td;
 }
@@ -653,17 +722,18 @@ function countAanwezigen(o, jeugd, leiding) {
   return [j, l];
 }
 
-// ------------------------------------------------------
-// Nieuwe opkomst
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   NIEUWE OPKOMST
+----------------------------------------------------- */
 
 function addOpkomst() {
   if (!isAdmin) return;
 
   const idRef = push(ref(db, `${speltak}/opkomsten`));
+  const id = idRef.key;
 
-  set(idRef, {
-    id: idRef.key,
+  const nieuw = {
+    id,
     datum: "",
     thema: "",
     bijzonderheden: "",
@@ -673,16 +743,20 @@ function addOpkomst() {
     locatie: "",
     procor: "",
     bert_met: "",
+    kijkers: 0,
+    extraLeiding: 0,
     aanwezigheid: {}
-  });
+  };
+
+  set(idRef, nieuw);
 }
 
-// ------------------------------------------------------
-// LEDENBEHEER — UNCHANGED LOGIC
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   LEDENBEHEER
+----------------------------------------------------- */
 
 function renderLedenbeheer() {
-  if (!ledenbeheerJeugdList) return;
+  if (!ledenbeheerJeugdList || !ledenbeheerLeidingList) return;
 
   if (!isAdmin) {
     ledenbeheerJeugdList.innerHTML = "";
@@ -711,11 +785,11 @@ function buildLidItem(lid, type, index) {
   const controls = document.createElement("div");
   controls.classList.add("ledenbeheer-controls");
 
-  const up = mkLidBtn("▲", () => moveLid(type, index, -1));
+  const up   = mkLidBtn("▲", () => moveLid(type, index, -1));
   const down = mkLidBtn("▼", () => moveLid(type, index, 1));
   const edit = mkLidBtn("✏", () => renameLid(type, lid));
   const hide = mkLidBtn(lid.verborgen ? "👁" : "🚫", () => toggleVerborgen(type, lid));
-  const del = mkLidBtn("🗑", () => deleteLid(type, lid));
+  const del  = mkLidBtn("🗑", () => deleteLid(type, lid));
 
   controls.append(up, down, edit, hide, del);
   li.append(name, controls);
@@ -726,13 +800,49 @@ function mkLidBtn(text, fn) {
   const b = document.createElement("button");
   b.textContent = text;
   b.classList.add("ledenbeheer-btn");
-  b.onclick = fn;
+  b.addEventListener("click", fn);
   return b;
 }
 
-// ------------------------------------------------------
-// ADMIN + FILTER + PRINT
-// ------------------------------------------------------
+function moveLid(type, index, delta) {
+  const lijst = type === "jeugd" ? [...jeugd] : [...leiding];
+  const nieuwIndex = index + delta;
+  if (nieuwIndex < 0 || nieuwIndex >= lijst.length) return;
+
+  const item = lijst.splice(index, 1)[0];
+  lijst.splice(nieuwIndex, 0, item);
+
+  lijst.forEach((l, i) => l.volgorde = i);
+
+  const path = type === "jeugd" ? "jeugdleden" : "leiding";
+  const updates = {};
+  lijst.forEach(l => {
+    updates[`${path}/${l.id}/volgorde`] = l.volgorde;
+  });
+  update(ref(db, speltak), updates);
+}
+
+function renameLid(type, lid) {
+  const nieuw = prompt("Nieuwe naam:", lid.naam);
+  if (!nieuw) return;
+  const path = type === "jeugd" ? "jeugdleden" : "leiding";
+  update(ref(db, `${speltak}/${path}/${lid.id}`), { naam: nieuw });
+}
+
+function toggleVerborgen(type, lid) {
+  const path = type === "jeugd" ? "jeugdleden" : "leiding";
+  update(ref(db, `${speltak}/${path}/${lid.id}`), { hidden: !lid.verborgen });
+}
+
+function deleteLid(type, lid) {
+  if (!confirm(`Lid ${lid.naam} verwijderen?`)) return;
+  const path = type === "jeugd" ? "jeugdleden" : "leiding";
+  remove(ref(db, `${speltak}/${path}/${lid.id}`));
+}
+
+/* -----------------------------------------------------
+   ADMIN, FILTER, PRINT
+----------------------------------------------------- */
 
 function toggleAdmin() {
   if (!isAdmin) {
@@ -767,29 +877,22 @@ function setFilter(mode) {
   renderTable();
 }
 
-function saveInfo() {
-  const txt = infoTekstEdit.value || "";
-  set(ref(db, `${speltak}/info`), txt);
+function doPrint() {
+  window.print();
 }
 
-// ------------------------------------------------------
-// INIT
-// ------------------------------------------------------
+/* -----------------------------------------------------
+   INIT
+----------------------------------------------------- */
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadData();
+if (editModeButton)    editModeButton.addEventListener("click", toggleAdmin);
+if (addOpkomstRow)     addOpkomstRow.addEventListener("click", addOpkomst);
+if (saveInfoButton)    saveInfoButton.addEventListener("click", saveInfoTekst);
+if (meldingenSaveButton) meldingenSaveButton.addEventListener("click", saveMeldingenInstellingen);
 
-  editModeButton.onclick = toggleAdmin;
-  filterAll.onclick = () => setFilter("all");
-  filterFuture.onclick = () => setFilter("future");
-  filterPast.onclick = () => setFilter("past");
-  printButton.onclick = () => window.print();
-  saveInfoButton.onclick = saveInfo;
-  addOpkomstRow.onclick = addOpkomst;
+if (filterAll)    filterAll.addEventListener("click", () => setFilter("all"));
+if (filterFuture) filterFuture.addEventListener("click", () => setFilter("future"));
+if (filterPast)   filterPast.addEventListener("click", () => setFilter("past"));
+if (printButton)  printButton.addEventListener("click", doPrint);
 
-  ledenbeheerButton.onclick = () =>
-    ledenbeheerSection.classList.toggle("hidden");
-
-  instellingenButton.onclick = () =>
-    meldingenSection.classList.toggle("hidden");
-});
+loadData();
