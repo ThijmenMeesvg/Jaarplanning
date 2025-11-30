@@ -10,7 +10,7 @@ import {
   set,
   update,
   remove,
-  push
+  push,
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -20,21 +20,32 @@ const firebaseConfig = {
   projectId: "jaarplanning-ovn",
   storageBucket: "jaarplanning-ovn.firebasestorage.app",
   messagingSenderId: "526104562356",
-  appId: "1:526104562356:web:ea211e722202d6383f65e1"
+  appId: "1:526104562356:web:ea211e722202d6383f65e1",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 /* -----------------------------------------------------
+   ADMIN WACHTWOORDEN (multi-speltak klaar)
+----------------------------------------------------- */
+const ADMIN_PASSWORDS = {
+  bevers: "bevers2025",
+  // later kun je hier bijv. welpen: "welpen2025" toevoegen
+};
+
+const DEFAULT_ADMIN_PASSWORD = "bevers2025";
+
+/* -----------------------------------------------------
    VARIABELEN
 ----------------------------------------------------- */
 let speltak = "";
 let isAdmin = false;
+let filterMode = "all"; // "all" | "future" | "past"
 
-let jeugd = [];    // [{id, naam, volgorde}]
-let leiding = [];  // [{id, naam, volgorde}]
-let leden = [];    // beide samen, voor getNaam()
+let jeugd = [];   // [{id, naam, volgorde}]
+let leiding = []; // [{id, naam, volgorde}]
+let leden = [];   // gecombineerde lijst
 let opkomsten = [];
 
 const todayISO = new Date().toISOString().split("T")[0];
@@ -45,10 +56,47 @@ const todayISO = new Date().toISOString().split("T")[0];
 document.addEventListener("DOMContentLoaded", () => {
   speltak = document.body.dataset.speltak;
 
-  document.getElementById("editButton").onclick = toggleAdmin;
-  document.getElementById("addOpkomstRow").onclick = addNewOpkomst;
-  document.getElementById("addMemberButton").onclick = addNewMember;
+  const editBtn = document.getElementById("editModeButton");
+  const addOpkomstRow = document.getElementById("addOpkomstRow");
+  const addMemberBtn = document.getElementById("addMemberButton");
+  const filterAllBtn = document.getElementById("filterAll");
+  const filterFutureBtn = document.getElementById("filterFuture");
+  const filterPastBtn = document.getElementById("filterPast");
+  const printBtn = document.getElementById("printButton");
 
+  if (editBtn) editBtn.onclick = toggleAdmin;
+  if (addOpkomstRow) addOpkomstRow.onclick = addNewOpkomst;
+  if (addMemberBtn) addMemberBtn.onclick = addNewMember;
+
+  if (filterAllBtn) {
+    filterAllBtn.onclick = () => {
+      filterMode = "all";
+      updateFilterButtons();
+      renderTable();
+    };
+  }
+  if (filterFutureBtn) {
+    filterFutureBtn.onclick = () => {
+      filterMode = "future";
+      updateFilterButtons();
+      renderTable();
+    };
+  }
+  if (filterPastBtn) {
+    filterPastBtn.onclick = () => {
+      filterMode = "past";
+      updateFilterButtons();
+      renderTable();
+    };
+  }
+
+  if (printBtn) {
+    printBtn.onclick = () => {
+      window.print();
+    };
+  }
+
+  updateFilterButtons();
   loadData();
 });
 
@@ -58,61 +106,100 @@ document.addEventListener("DOMContentLoaded", () => {
 function toggleAdmin() {
   if (!isAdmin) {
     const pw = prompt("Wachtwoord:");
-    if (pw !== "bevers2025") return;
+    const requiredPw = ADMIN_PASSWORDS[speltak] || DEFAULT_ADMIN_PASSWORD;
+    if (pw !== requiredPw) return;
     isAdmin = true;
   } else {
     isAdmin = false;
   }
 
-  document.getElementById("addOpkomstRow").style.display = isAdmin ? "table-row" : "none";
-  document.getElementById("addMemberButton").style.display = isAdmin ? "inline-block" : "none";
+  const addOpkomstRow = document.getElementById("addOpkomstRow");
+  const addMemberBtn = document.getElementById("addMemberButton");
+  const printBtn = document.getElementById("printButton");
+
+  if (addOpkomstRow) {
+    addOpkomstRow.classList.toggle("hidden", !isAdmin);
+  }
+  if (addMemberBtn) {
+    addMemberBtn.classList.toggle("hidden", !isAdmin);
+  }
+  if (printBtn) {
+    // Printknop alleen zichtbaar als we niet in bewerkmodus zitten
+    printBtn.classList.toggle("hidden", isAdmin);
+  }
 
   renderTable();
 }
 
+function updateFilterButtons() {
+  const filterAllBtn = document.getElementById("filterAll");
+  const filterFutureBtn = document.getElementById("filterFuture");
+  const filterPastBtn = document.getElementById("filterPast");
+
+  if (filterAllBtn) {
+    filterAllBtn.classList.toggle("active", filterMode === "all");
+  }
+  if (filterFutureBtn) {
+    filterFutureBtn.classList.toggle("active", filterMode === "future");
+  }
+  if (filterPastBtn) {
+    filterPastBtn.classList.toggle("active", filterMode === "past");
+  }
+}
+
 /* -----------------------------------------------------
    DATA LADEN
-   Firebase structuur per speltak:
-   - jeugdleden: { id: {naam, volgorde} }
-   - leiding:    { id: {naam, volgorde} }
-   - opkomsten:  { id: {...} }
+   structuur:
+   - /<speltak>/jeugdleden
+   - /<speltak>/leiding
+   - /<speltak>/opkomsten
 ----------------------------------------------------- */
 async function loadData() {
-  const snap = await get(child(ref(db), speltak));
-  const data = snap.exists() ? snap.val() : {};
+  try {
+    const snap = await get(child(ref(db), speltak));
+    const data = snap.exists() ? snap.val() : {};
 
-  const jeugdData = data.jeugdleden || {};
-  const leidingData = data.leiding || {};
+    const jeugdData = data.jeugdleden || {};
+    const leidingData = data.leiding || {};
 
-  jeugd = Object.entries(jeugdData).map(([id, v]) => ({
-    id,
-    naam: v.naam,
-    volgorde: v.volgorde ?? 0
-  })).sort((a, b) => a.volgorde - b.volgorde);
+    jeugd = Object.entries(jeugdData)
+      .map(([id, v]) => ({
+        id,
+        naam: v.naam,
+        volgorde: v.volgorde ?? 0,
+      }))
+      .sort((a, b) => a.volgorde - b.volgorde);
 
-  leiding = Object.entries(leidingData).map(([id, v]) => ({
-    id,
-    naam: v.naam,
-    volgorde: v.volgorde ?? 0
-  })).sort((a, b) => a.volgorde - b.volgorde);
+    leiding = Object.entries(leidingData)
+      .map(([id, v]) => ({
+        id,
+        naam: v.naam,
+        volgorde: v.volgorde ?? 0,
+      }))
+      .sort((a, b) => a.volgorde - b.volgorde);
 
-  leden = [
-    ...jeugd.map(j => ({ ...j, type: "jeugd" })),
-    ...leiding.map(l => ({ ...l, type: "leiding" }))
-  ];
+    leden = [
+      ...jeugd.map(j => ({ ...j, type: "jeugd" })),
+      ...leiding.map(l => ({ ...l, type: "leiding" })),
+    ];
 
-  opkomsten = Object.entries(data.opkomsten || {}).map(([id, v]) => ({
-    id,
-    ...v
-  }));
+    opkomsten = Object.entries(data.opkomsten || {}).map(([id, v]) => ({
+      id,
+      ...v,
+    }));
 
-  const toekomst = opkomsten.filter(o => o.datum >= todayISO);
-  const verleden = opkomsten.filter(o => o.datum < todayISO);
-  toekomst.sort((a, b) => a.datum.localeCompare(b.datum));
-  verleden.sort((a, b) => a.datum.localeCompare(b.datum));
-  opkomsten = [...toekomst, ...verleden];
+    // toekomst eerst, dan verleden
+    const toekomst = opkomsten.filter(o => o.datum >= todayISO);
+    const verleden = opkomsten.filter(o => o.datum < todayISO);
+    toekomst.sort((a, b) => a.datum.localeCompare(b.datum));
+    verleden.sort((a, b) => a.datum.localeCompare(b.datum));
+    opkomsten = [...toekomst, ...verleden];
 
-  renderTable();
+    renderTable();
+  } catch (err) {
+    console.error("Fout bij laden van data:", err);
+    alert("Het laden van de planning is mislukt. Probeer de pagina te vernieuwen.");
+  }
 }
 
 /* -----------------------------------------------------
@@ -123,6 +210,8 @@ function renderTable() {
   const headBot = document.getElementById("headerRowBottom");
   const body = document.getElementById("tableBody");
 
+  if (!headTop || !headBot || !body) return;
+
   headTop.innerHTML = "";
   headBot.innerHTML = "";
   body.innerHTML = "";
@@ -132,46 +221,59 @@ function renderTable() {
   addTH(headTop, "Datum", 1, 2);
   addTH(headTop, "Thema", 1, 2);
   addTH(headTop, "Bijzonderheden", 1, 2);
+  addTH(headTop, "Type", 1, 2);
   addTH(headTop, "Start", 1, 2);
   addTH(headTop, "Eind", 1, 2);
   addTH(headTop, "Procor", 1, 2);
   addTH(headTop, "Bert 🧸", 1, 2);
-  addTH(headTop, "# Jeugd", 1, 2);
-  addTH(headTop, "# Leiding", 1, 2);
+  addTH(headTop, "Aanw. Leden", 1, 2);   // punt 15
+  addTH(headTop, "Aanw. Leiding", 1, 2); // punt 15
 
-  /* Geen grote JEUGD/LEIDING group headers meer,
-     alleen onder de vaste kolommen de namen. */
+  /* --- HEADER RIJ 2 (namen, verticaal) --- */
+  // lege kolommen onder de vaste velden
+  const vasteKolommen = 11;
+  for (let i = 0; i < vasteKolommen; i++) {
+    addTH(headBot, "");
+  }
 
-  /* --- HEADER RIJ 2 (namen) --- */
-  // lege cells onder de vaste kolommen (10 stuks)
-  for (let i = 0; i < 10; i++) addTH(headBot, "");
+  jeugd.forEach(j => {
+    const th = document.createElement("th");
+    th.textContent = j.naam;
+    th.classList.add("col-jeugd", "name-vertical");
+    headBot.appendChild(th);
+  });
 
-    jeugd.forEach(j => {
-     const th = document.createElement("th");
-     th.textContent = j.naam;
-     th.classList.add("col-jeugd", "name-vertical");
-     headBot.appendChild(th);
-   });
-   
-   leiding.forEach(l => {
-     const th = document.createElement("th");
-     th.textContent = l.naam;
-     th.classList.add("col-leiding", "name-vertical");
-     headBot.appendChild(th);
-   });
-   
+  leiding.forEach(l => {
+    const th = document.createElement("th");
+    th.textContent = l.naam;
+    th.classList.add("col-leiding", "name-vertical");
+    headBot.appendChild(th);
+  });
 
   /* --- BODY --- */
   let firstFuture = true;
 
-  opkomsten.forEach(o => {
+  let lijst = opkomsten;
+  if (filterMode === "future") {
+    lijst = opkomsten.filter(o => o.datum >= todayISO);
+  } else if (filterMode === "past") {
+    lijst = opkomsten.filter(o => o.datum < todayISO);
+  }
+
+  lijst.forEach(o => {
     ensurePresence(o);
 
     const tr = document.createElement("tr");
 
-    if (o.datum < todayISO) tr.classList.add("row-grey");
-    else if (firstFuture) { tr.classList.add("row-next"); firstFuture = false; }
+    // datumkleuren
+    if (o.datum < todayISO) {
+      tr.classList.add("row-grey");
+    } else if (firstFuture && o.datum >= todayISO) {
+      tr.classList.add("row-next");
+      firstFuture = false;
+    }
 
+    // type opkomst
     if (o.typeOpkomst === "bijzonder") tr.classList.add("row-bijzonder");
     if (o.typeOpkomst === "kamp") tr.classList.add("row-kamp");
 
@@ -180,19 +282,21 @@ function renderTable() {
     addTextCell(tr, o, "datum", "date");
     addTextCell(tr, o, "thema", "text");
     addTextCell(tr, o, "bijzonderheden", "text");
+    addTypeCell(tr, o); // NIEUWE kolom voor type opkomst
     addTextCell(tr, o, "starttijd", "time");
     addTextCell(tr, o, "eindtijd", "time");
 
     addProcorCell(tr, o);
     addBertCell(tr, o);
 
-    // AANTALLEN JEUGD / LEIDING
+    // aantallen jeugd / leiding
     const jeugdCount = jeugd.reduce(
       (sum, j) => sum + (o.aanwezigheid[j.id] === "aanwezig" ? 1 : 0),
       0
     );
     const leidingCount = leiding.reduce(
-      (sum, l) => sum + (o.aanwezigheid["leiding-" + l.id] === "aanwezig" ? 1 : 0),
+      (sum, l) =>
+        sum + (o.aanwezigheid["leiding-" + l.id] === "aanwezig" ? 1 : 0),
       0
     );
 
@@ -206,7 +310,7 @@ function renderTable() {
     tdLeidingCnt.classList.add("col-leiding");
     tr.appendChild(tdLeidingCnt);
 
-    // AANWEZIGHEIDSCELLEN
+    // aanwezigheidsvelden
     jeugd.forEach(j => tr.appendChild(makePresenceCell(o, j.id, "jeugd")));
     leiding.forEach(l => tr.appendChild(makePresenceCell(o, "leiding-" + l.id, "leiding")));
 
@@ -236,8 +340,13 @@ function addDeleteCell(tr, o) {
   if (isAdmin) {
     td.onclick = async () => {
       if (!confirm("Weet je zeker dat je deze opkomst wilt verwijderen?")) return;
-      await remove(ref(db, `${speltak}/opkomsten/${o.id}`));
-      loadData();
+      try {
+        await remove(ref(db, `${speltak}/opkomsten/${o.id}`));
+        loadData();
+      } catch (err) {
+        console.error("Kon opkomst niet verwijderen:", err);
+        alert("Verwijderen mislukt. Probeer het opnieuw.");
+      }
     };
   }
 
@@ -271,10 +380,15 @@ function editText(td, o, field, type) {
 
   input.onblur = async () => {
     const val = input.value;
-    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
-      [field]: val
-    });
-    loadData();
+    try {
+      await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+        [field]: val,
+      });
+      loadData();
+    } catch (err) {
+      console.error("Kon veld niet opslaan:", err);
+      alert("Opslaan mislukt. Probeer het opnieuw.");
+    }
   };
 
   input.onkeydown = e => {
@@ -283,7 +397,45 @@ function editText(td, o, field, type) {
 }
 
 /* -----------------------------------------------------
-   PROCOR (dropdown leiding)
+   TYPE OPKOMST (normaal/bijzonder/kamp)
+----------------------------------------------------- */
+function addTypeCell(tr, o) {
+  const td = document.createElement("td");
+
+  const type = o.typeOpkomst || "normaal";
+  let label = "Normaal";
+  if (type === "bijzonder") label = "Bijzonder";
+  if (type === "kamp") label = "Kamp";
+
+  td.textContent = label;
+
+  if (isAdmin) {
+    td.classList.add("editable");
+    td.onclick = async () => {
+      const next =
+        type === "normaal"
+          ? "bijzonder"
+          : type === "bijzonder"
+          ? "kamp"
+          : "normaal";
+
+      try {
+        await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+          typeOpkomst: next,
+        });
+        loadData();
+      } catch (err) {
+        console.error("Kon type opkomst niet opslaan:", err);
+        alert("Opslaan mislukt. Probeer het opnieuw.");
+      }
+    };
+  }
+
+  tr.appendChild(td);
+}
+
+/* -----------------------------------------------------
+   PROCOR / BERT
 ----------------------------------------------------- */
 function addProcorCell(tr, o) {
   const td = document.createElement("td");
@@ -309,16 +461,18 @@ function editProcor(td, o) {
   sel.focus();
 
   sel.onblur = async () => {
-    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
-      procor: sel.value
-    });
-    loadData();
+    try {
+      await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+        procor: sel.value,
+      });
+      loadData();
+    } catch (err) {
+      console.error("Kon Procor niet opslaan:", err);
+      alert("Opslaan mislukt. Probeer het opnieuw.");
+    }
   };
 }
 
-/* -----------------------------------------------------
-   BERT (dropdown jeugd)
------------------------------------------------------ */
 function addBertCell(tr, o) {
   const td = document.createElement("td");
   td.textContent = getNaam(o.bert_met);
@@ -343,10 +497,15 @@ function editBert(td, o) {
   sel.focus();
 
   sel.onblur = async () => {
-    await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
-      bert_met: sel.value
-    });
-    loadData();
+    try {
+      await update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+        bert_met: sel.value,
+      });
+      loadData();
+    } catch (err) {
+      console.error("Kon Bert niet opslaan:", err);
+      alert("Opslaan mislukt. Probeer het opnieuw.");
+    }
   };
 }
 
@@ -355,19 +514,32 @@ function editBert(td, o) {
 ----------------------------------------------------- */
 function ensurePresence(o) {
   if (!o.aanwezigheid) o.aanwezigheid = {};
+  let changed = false;
 
   jeugd.forEach(j => {
-    if (!o.aanwezigheid[j.id]) o.aanwezigheid[j.id] = "onbekend";
+    if (!o.aanwezigheid[j.id]) {
+      o.aanwezigheid[j.id] = "onbekend";
+      changed = true;
+    }
   });
 
   leiding.forEach(l => {
     const key = "leiding-" + l.id;
-    if (!o.aanwezigheid[key]) o.aanwezigheid[key] = "onbekend";
+    if (!o.aanwezigheid[key]) {
+      o.aanwezigheid[key] = "onbekend";
+      changed = true;
+    }
   });
 
-  update(ref(db, `${speltak}/opkomsten/${o.id}`), {
-    aanwezigheid: o.aanwezigheid
-  });
+  if (changed) {
+    try {
+      update(ref(db, `${speltak}/opkomsten/${o.id}`), {
+        aanwezigheid: o.aanwezigheid,
+      });
+    } catch (err) {
+      console.error("Kon aanwezigheid niet bijwerken:", err);
+    }
+  }
 }
 
 function makePresenceCell(o, key, groep) {
@@ -376,15 +548,15 @@ function makePresenceCell(o, key, groep) {
   td.classList.add("presence-cell");
   td.classList.add(groep === "leiding" ? "col-leiding" : "col-jeugd");
 
-  // ? / ✔ / ✖
-  td.textContent =
-    state === "aanwezig"
-      ? "✔"
-      : state === "afwezig"
-      ? "✖"
-      : "?";
+  td.classList.remove("presence-aanwezig", "presence-afwezig");
+  if (state === "aanwezig") td.classList.add("presence-aanwezig");
+  if (state === "afwezig") td.classList.add("presence-afwezig");
 
-  // Altijd klikbaar (ook voor ouders)
+  td.textContent =
+    state === "aanwezig" ? "✔" :
+    state === "afwezig" ? "✖" : "?";
+
+  // altijd klikbaar (ouders kunnen wijzigen)
   td.onclick = async () => {
     const current = o.aanwezigheid[key] || "onbekend";
     const next =
@@ -394,11 +566,14 @@ function makePresenceCell(o, key, groep) {
         ? "afwezig"
         : "onbekend";
 
-    await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
-      [key]: next
-    });
-
-    loadData();
+    try {
+      await update(ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`), {
+        [key]: next,
+      });
+      loadData();
+    } catch (err) {
+      console.error("Kon aanwezigheid niet opslaan:", err);
+    }
   };
 
   return td;
@@ -421,18 +596,23 @@ async function addNewOpkomst() {
     procor: "",
     bert_met: "",
     typeOpkomst: "normaal",
-    aanwezigheid: {}
+    aanwezigheid: {},
   };
 
   jeugd.forEach(j => (nieuw.aanwezigheid[j.id] = "onbekend"));
   leiding.forEach(l => (nieuw.aanwezigheid["leiding-" + l.id] = "onbekend"));
 
-  await set(ref(db, `${speltak}/opkomsten/${id}`), nieuw);
-  loadData();
+  try {
+    await set(ref(db, `${speltak}/opkomsten/${id}`), nieuw);
+    loadData();
+  } catch (err) {
+    console.error("Kon opkomst niet opslaan:", err);
+    alert("Opslaan mislukt. Probeer het opnieuw.");
+  }
 }
 
 /* -----------------------------------------------------
-   LIDTYPE KIEZEN (overlay met radio-buttons)
+   LIDTYPE KIEZEN (overlay)
 ----------------------------------------------------- */
 function chooseMemberType() {
   return new Promise(resolve => {
@@ -507,23 +687,28 @@ async function addNewMember() {
 
   const volgorde = branch === "leiding" ? leiding.length + 1 : jeugd.length + 1;
 
-  await set(ref(db, `${speltak}/${branch}/${id}`), {
-    naam,
-    volgorde
-  });
+  try {
+    await set(ref(db, `${speltak}/${branch}/${id}`), {
+      naam,
+      volgorde,
+    });
 
-  // Aanwezigheid voor alle bestaande opkomsten aanvullen
-  for (const o of opkomsten) {
-    const key = type === "leiding" ? `leiding-${id}` : id;
-    const aanwRef = ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`);
-    await update(aanwRef, { [key]: "onbekend" });
+    // aanwezigheid bij alle opkomsten aanvullen
+    for (const o of opkomsten) {
+      const key = type === "leiding" ? `leiding-${id}` : id;
+      const aanwRef = ref(db, `${speltak}/opkomsten/${o.id}/aanwezigheid`);
+      await update(aanwRef, { [key]: "onbekend" });
+    }
+
+    loadData();
+  } catch (err) {
+    console.error("Kon nieuw lid niet opslaan:", err);
+    alert("Opslaan mislukt. Probeer het opnieuw.");
   }
-
-  loadData();
 }
 
 /* -----------------------------------------------------
-   NAAM HELPER
+   HELPER: NAAM OPZOEKEN
 ----------------------------------------------------- */
 function getNaam(id) {
   if (!id) return "";
@@ -531,6 +716,3 @@ function getNaam(id) {
   return l ? l.naam : "";
 }
 
-/* -----------------------------------------------------
-   EINDE BESTAND
------------------------------------------------------ */
