@@ -15,7 +15,6 @@
     <img class="topbar-logo"
          src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
          alt="Scouting Olivier van Noort logo">
-
     <div class="topbar-title">
       <h1>Bevers – Jaarplanning</h1>
       <span>Planning, aanwezigheid & belangrijke info</span>
@@ -30,24 +29,25 @@
   <!-- INFO BLOK -->
   <section class="info-block">
     <h2>Belangrijke informatie</h2>
+
+    <!-- alleen lezen voor ouders -->
     <p id="infotekst"></p>
 
-    <!-- Alleen zichtbaar in admin mode -->
+    <!-- alleen zichtbaar in bewerkmodus -->
     <textarea id="infotekst_edit" class="hidden"></textarea>
-    <button id="saveInfoButton" class="hidden save-info-btn">Opslaan</button>
+    <button id="saveInfoButton" class="hidden primary-btn">Opslaan</button>
   </section>
 
   <!-- PLANNING -->
   <section class="planning-section">
 
     <div class="planning-header-row">
-      <button id="editModeButton" class="edit-button">Bewerkmodus</button>
-      <button id="addMemberButton" class="add-member-btn hidden">+ Lid</button>
-      <button id="ledenbeheerButton" class="edit-button hidden">Ledenbeheer</button>
+      <button id="editModeButton" class="pill-btn primary">Bewerkmodus</button>
+      <button id="addMemberButton" class="pill-btn primary hidden">+ Lid</button>
+      <button id="ledenbeheerButton" class="pill-btn primary hidden">Ledenbeheer</button>
 
-      <!-- nieuwe knoppen, alleen in admin modus zichtbaar -->
       <a id="mailboxButton"
-         class="edit-button secondary hidden"
+         class="pill-btn outline hidden"
          href="https://mail.google.com/"
          target="_blank"
          rel="noopener">
@@ -55,24 +55,26 @@
       </a>
 
       <a id="handleidingButton"
-         class="edit-button secondary hidden"
-         href="handleiding-mailbox.pdf"
+         class="pill-btn outline hidden"
+         href="scouting_mail_handleiding_styled.pdf"
          download>
         Handleiding mailbox (PDF)
       </a>
 
       <button id="instellingenButton"
-              class="edit-button ghost hidden">
+              class="pill-btn ghost hidden">
         Meldingen
       </button>
     </div>
 
     <div class="planning-controls">
-      <button id="filterAll" class="active">Alle opkomsten</button>
-      <button id="filterFuture">Alleen komende</button>
-      <button id="filterPast">Alleen geweest</button>
+      <button id="filterAll" class="chip active">Alle opkomsten</button>
+      <button id="filterFuture" class="chip">Alleen komende</button>
+      <button id="filterPast" class="chip">Alleen geweest</button>
 
-      <button id="printButton" class="print-button">🖨 Print</button>
+      <button id="printButton" class="pill-btn print-btn">
+        🖨 Print
+      </button>
     </div>
 
     <div class="table-wrapper">
@@ -85,7 +87,7 @@
         <tbody id="tableBody"></tbody>
 
         <tfoot>
-        <tr id="addOpkomstRow" class="hidden add-row">
+        <tr id="addOpkomstRow" class="add-row hidden">
           <td colspan="999">+ Opkomst toevoegen</td>
         </tr>
         </tfoot>
@@ -93,7 +95,7 @@
     </div>
   </section>
 
-  <!-- LEDENBEHEER -->
+  <!-- LEDENBEHEER (alleen in bewerkmodus) -->
   <section id="ledenbeheer" class="ledenbeheer hidden">
     <h2>Ledenbeheer</h2>
 
@@ -109,15 +111,15 @@
     </div>
   </section>
 
-  <!-- MELDINGEN / INSTELLINGEN -->
+  <!-- MELDINGEN / INSTELLINGEN (alleen in bewerkmodus) -->
   <section id="meldingen" class="meldingen hidden">
     <h2>Meldingen per e-mail</h2>
 
     <p class="meldingen-uitleg">
-      Hier stel je in wanneer er meldingen verstuurd zouden moeten worden.
-      De instellingen worden opgeslagen in de database. Voor het echt automatisch
-      versturen van e-mails heb je wel nog een extra koppeling nodig
-      (bijv. via Firebase Cloud Functions of een mailservice).
+      De instellingen hieronder worden opgeslagen in de database. Voor automatische e-mailmeldingen
+      heb je nog een kleine backend nodig (bijvoorbeeld een Firebase Cloud Function).  
+      Met de knop “Test meldingen nu” wordt een e-mailbericht klaargezet naar
+      <code>ovnscouting+bevers@gmail.com</code>.
     </p>
 
     <div class="meldingen-row">
@@ -146,9 +148,12 @@
       </div>
     </div>
 
-    <button id="saveMeldingenButton" class="save-info-btn">
-      Meldingen opslaan
-    </button>
+    <div class="meldingen-actions">
+      <button id="saveMeldingenButton" class="primary-btn">Meldingen opslaan</button>
+      <button id="testMeldingenButton" class="pill-btn outline">
+        Test meldingen nu
+      </button>
+    </div>
   </section>
 
 </main>
