@@ -1,71 +1,101 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <title>Bevers – Jaarplanning</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Jaarplanning en aanwezigheidsoverzicht voor de Bevers van Scouting Olivier van Noort.">
+    <meta charset="UTF-8">
+    <title>Bevers – Jaarplanning</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="style.css">
+    <!-- Beschrijving t.b.v. ouders en leiding -->
+    <meta name="description" content="Jaarplanning, aanwezigheid en belangrijke informatie voor de Bevers van Scouting Olivier van Noort.">
+
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body data-speltak="bevers">
-  <header class="topbar">
+
+<header class="topbar">
     <div class="topbar-left">
-      <img class="topbar-logo"
-           src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
-           alt="Scouting Olivier van Noort logo">
-      <div class="topbar-title">
-        <h1>Bevers – Jaarplanning</h1>
-        <span>Planning, aanwezigheid &amp; overzicht</span>
-      </div>
+        <img class="topbar-logo"
+             src="https://www.oliviervannoort.nl/images/logo-oliviervannoort-blauw-transparant.png"
+             alt="Scouting Olivier van Noort logo">
+
+        <div class="topbar-title">
+            <h1>Bevers – Jaarplanning</h1>
+            <span>Planning, aanwezigheid & belangrijke info</span>
+        </div>
     </div>
 
     <a class="backlink" href="index.html">← Terug</a>
-  </header>
+</header>
 
-  <main class="container">
+<main class="container">
+
+    <!-- Info blok voor ouders & leiding -->
     <section class="info-block">
-      <h2>Planning</h2>
-      <p>
-        Ouders kunnen aanwezigheid invullen door op een vak te klikken.<br>
-        In bewerkmodus kun je opkomsten en leden beheren.
-      </p>
+        <h2>Belangrijke informatie</h2>
+        <p id="infotekst"></p>
+
+        <!-- Alleen zichtbaar in admin mode -->
+        <textarea id="infotekst_edit" class="hidden"></textarea>
+        <button id="saveInfoButton" class="hidden save-info-btn">Opslaan</button>
     </section>
 
-    <div class="planning-header-row">
-      <button id="editModeButton" class="edit-button">Bewerkmodus</button>
-      <button id="addMemberButton" class="add-member-btn hidden">+ Lid toevoegen</button>
-    </div>
+    <section class="planning-section">
 
-      <div class="planning-controls">
-      <button id="filterAll" class="active">Alle opkomsten</button>
-      <button id="filterFuture">Alleen komende</button>
-      <button id="filterPast">Alleen verleden</button>
+        <div class="planning-header-row">
+            <button id="editModeButton" class="edit-button">Bewerkmodus</button>
+            <button id="addMemberButton" class="add-member-btn hidden">+ Lid toevoegen</button>
+            <button id="ledenbeheerButton" class="edit-button hidden">Ledenbeheer</button>
+        </div>
 
-      <button id="printButton" class="print-button">🖨 Print overzicht</button>
-    </div>
+        <div class="planning-controls">
+            <button id="filterAll" class="active">Alle opkomsten</button>
+            <button id="filterFuture">Alleen komende</button>
+            <button id="filterPast">Alleen geweest</button>
 
+            <button id="printButton" class="print-button">🖨 Print</button>
+        </div>
 
-    <div class="table-wrapper">
-      <table class="planning-table">
-        <thead>
-          <tr id="headerRowTop"></tr>
-          <tr id="headerRowBottom"></tr>
-        </thead>
+        <div class="table-wrapper">
+            <table class="planning-table">
+                <thead>
+                <tr id="headerRowTop"></tr>
+                <tr id="headerRowBottom"></tr>
+                </thead>
 
-        <tbody id="tableBody"></tbody>
+                <tbody id="tableBody"></tbody>
 
-        <tfoot>
-          <tr class="add-row hidden" id="addOpkomstRow">
-            <td colspan="999">+ Opkomst toevoegen</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </main>
+                <tfoot>
+                <tr class="add-row hidden" id="addOpkomstRow">
+                    <td colspan="999">+ Opkomst toevoegen</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
 
-  <script type="module" src="speltak.js"></script>
+    <!-- Ledenbeheerblok -->
+    <section id="ledenbeheer" class="ledenbeheer hidden">
+        <h2>Ledenbeheer</h2>
+
+        <div class="ledenbeheer-columns">
+
+            <div class="ledenbeheer-col">
+                <h3>Jeugdleden</h3>
+                <ul id="ledenbeheerJeugd"></ul>
+            </div>
+
+            <div class="ledenbeheer-col">
+                <h3>Leiding</h3>
+                <ul id="ledenbeheerLeiding"></ul>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<script type="module" src="speltak.js"></script>
+
 </body>
 </html>
-
