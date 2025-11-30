@@ -329,5 +329,141 @@ th.name-vertical {
   height: 120px;                 /* maak de header wat hoger */
   font-weight: 600;
 }
+/* ---------- Jaarplanning extra's (Bevers & andere speltakken) ---------- */
+
+td.editable:hover {
+  background: #fff6cc;
+  cursor: text;
+}
+
+.presence-cell {
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* delete-knop kolom */
+.delete-btn {
+  cursor: pointer;
+  text-align: center;
+  width: 2rem;
+}
+
+/* regel met bewerkknop + lid toevoegen */
+.planning-header-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* filter- en printknoppen */
+.planning-controls {
+  margin: 0.25rem 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.planning-controls button {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.planning-controls button.active {
+  background: var(--blue-soft);
+  border-color: var(--blue);
+}
+
+/* rij om een nieuwe opkomst toe te voegen */
+.add-row {
+  background: #e9f9e9;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* datum-/typekleuren */
+.row-grey {
+  background: #eeeeee !important;
+}
+
+.row-next {
+  background: #d9f7d9 !important;
+}
+
+.row-bijzonder {
+  background: #fff4bf !important;
+}
+
+.row-kamp {
+  background: #ffd9b5 !important;
+}
+
+/* knop + Lid toevoegen */
+.add-member-btn {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--blue);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.add-member-btn:hover {
+  opacity: 0.9;
+}
+
+/* verticale namen boven de kolommen */
+th.name-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  padding: 4px 0;
+  text-align: left;
+  height: 120px;
+  font-weight: 600;
+}
+
+/* jeugd / leiding tinten (bestonden al maar voor de zekerheid) */
+.col-jeugd {
+  background: #fff8e1;
+}
+
+.col-leiding {
+  background: #e3f2fd;
+}
+
+/* printvriendelijke versie: alleen de planning */
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .topbar,
+  .backlink,
+  #editModeButton,
+  .add-member-btn,
+  .planning-controls,
+  .admin-hint {
+    display: none !important;
+  }
+
+  .container {
+    max-width: 100%;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .planning-table {
+    box-shadow: none;
+  }
+}
 
 
