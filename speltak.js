@@ -232,33 +232,25 @@ function renderTable() {
     }
   });
 
-      const zichtbareLeiding = leiding.filter(l => !l.hidden);
-      
+     const zichtbareLeiding = leiding.filter(l => !l.hidden);
+
       if (zichtbareLeiding.length > 0) {
+          // eerste leiding-kolom met scheiding
           const first = zichtbareLeiding[0];
-      
           const th = document.createElement("th");
           th.textContent = first.naam;
           th.classList.add("col-leiding", "name-vertical", "col-split");
           headBot.appendChild(th);
       
-         const zichtbareLeiding = leiding.filter(l => !l.hidden);
+          // overige leiding-kolommen
+          zichtbareLeiding.slice(1).forEach(l => {
+              const th2 = document.createElement("th");
+              th2.textContent = l.naam;
+              th2.classList.add("col-leiding", "name-vertical");
+              headBot.appendChild(th2);
+          });
+      }
 
-         if (zichtbareLeiding.length > 0) {
-             const first = zichtbareLeiding[0];
-         
-             const th = document.createElement("th");
-             th.textContent = first.naam;
-             th.classList.add("col-leiding", "name-vertical", "col-split");
-             headBot.appendChild(th);
-         
-             zichtbareLeiding.slice(1).forEach(l => {
-                 const th2 = document.createElement("th");
-                 th2.textContent = l.naam;
-                 th2.classList.add("col-leiding", "name-vertical");
-                 headBot.appendChild(th2);
-             });
-         }
 
   let lijst = [...opkomsten];
   if (filterMode==="future") lijst=lijst.filter(o=>o.datum>=todayISO);
