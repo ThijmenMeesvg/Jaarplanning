@@ -39,14 +39,23 @@
   <div class="info-actions">
     <button id="saveInfoButton" class="hidden primary-btn">Opslaan</button>
 
-    <!-- maandbrief: in beide modi zichtbaar -->
-    <button id="maandbriefButton" class="primary-btn">
-      Maandbrief downloaden
-    </button>
-    <input id="maandbriefUpload"
-           type="file"
-           accept="application/pdf"
-           class="hidden">
+    <div class="info-actions">
+
+  <button id="saveInfoButton" class="hidden primary-btn">Opslaan</button>
+
+  <a id="maandbriefDownloadButton"
+     class="pill-btn outline"
+     href="#"
+     download>
+    Maandbrief downloaden
+  </a>
+
+  <input id="maandbriefUploadInput"
+         type="file"
+         accept="application/pdf"
+         class="hidden">
+   </div>
+
   </div>
 </section>
 
