@@ -27,16 +27,29 @@
 <main class="container">
 
   <!-- INFO BLOK -->
-  <section class="info-block">
-    <h2>Belangrijke informatie</h2>
+<section class="info-block">
+  <h2>Belangrijke informatie</h2>
 
-    <!-- alleen lezen voor ouders -->
-    <p id="infotekst"></p>
+  <!-- alleen lezen voor ouders -->
+  <p id="infotekst"></p>
 
-    <!-- alleen zichtbaar in bewerkmodus -->
-    <textarea id="infotekst_edit" class="hidden"></textarea>
+  <!-- alleen zichtbaar in bewerkmodus -->
+  <textarea id="infotekst_edit" class="hidden"></textarea>
+
+  <div class="info-actions">
     <button id="saveInfoButton" class="hidden primary-btn">Opslaan</button>
-  </section>
+
+    <!-- maandbrief: in beide modi zichtbaar -->
+    <button id="maandbriefButton" class="primary-btn">
+      Maandbrief downloaden
+    </button>
+    <input id="maandbriefUpload"
+           type="file"
+           accept="application/pdf"
+           class="hidden">
+  </div>
+</section>
+
 
   <!-- PLANNING -->
   <section class="planning-section">
