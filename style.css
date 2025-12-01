@@ -1,14 +1,19 @@
 :root {
   --bg: #f5f7fb;
   --card: #ffffff;
-  --blue: #003d7a;
-  --blue-soft: #e1ecff;
-  --accent: #ffd200;
+
+  /* hoofdknop / accentkleur */
+  --blue: #006fff;
+  --blue-soft: #e4f0ff;
+
+  /* extra accentkleur (mag voor badges e.d.) */
+  --accent: #ffcd59;
+
   --border: #dde3ef;
-  --text-main: #1f2933;
+  --text-main: #111827;
   --text-muted: #6b7280;
 
-  /* subtiele blouse-kleuren (voor later op buttons/kaarten) */
+  /* speltak-kleuren kun je gewoon houden */
   --bevers: #e51b23;
   --welpen: #009b3a;
   --scouts: #c69c6d;
@@ -119,6 +124,13 @@ body {
 }
 
 /* -------------------- BUTTONS -------------------- */
+
+.info-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
 
 .pill-btn,
 .primary-btn {
@@ -253,23 +265,37 @@ body {
   background: #d9f5d9;
 }
 
-/* rijkleuren */
+/* rijkleuren (opkomsten) */
 
+/* opkomst in het verleden */
 .row-grey {
-  background: #f0f0f0 !important;
+  background: #e5e5e5 !important;           /* gebaseerd op #5D5D5D */
 }
 
+/* eerstvolgende / speciaal gemarkeerde opkomst */
 .row-next {
-  background: #dcfce7 !important;
+  background: #e4f7de !important;           /* zacht groen uit #7CC46A */
+  border-left: 4px solid #7cc46a;
 }
 
+/* bijzondere opkomst */
 .row-bijzonder {
-  background: #fff6cc !important;
+  background: #f3e7ff !important;           /* zacht paars uit #BE70FF */
+  border-left: 4px solid #be70ff;
 }
 
+/* kamp */
 .row-kamp {
-  background: #ffe4c7 !important;
+  background: #ffe3f4 !important;           /* zacht roze uit #FF66CC */
+  border-left: 4px solid #ff66cc;
 }
+
+/* geen opkomst */
+.row-geenopkomst {
+  background: #fde1e1 !important;           /* zacht rood uit #F43E3E */
+  border-left: 4px solid #f43e3e;
+}
+
 
 /* delete */
 
@@ -508,12 +534,17 @@ td.col-split {
 }
 
 /* -------------------- PRINT -------------------- */
-
 @media print {
 
+  body {
+    background: #ffffff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* UI die niet mee hoeft op papier */
   header,
-  .info-block textarea,
-  #saveInfoButton,
+  .info-block,
   .planning-header-row,
   .planning-controls,
   #addOpkomstRow,
@@ -522,44 +553,35 @@ td.col-split {
     display: none !important;
   }
 
-  body {
-    background: #fff;
-  }
-
   .container {
-    max-width: none;
+    max-width: 100%;
     margin: 0;
     padding: 0;
   }
 
+  .card,
   .planning-section {
     box-shadow: none;
     border-radius: 0;
   }
 
-  /* deletekolom verbergen */
-  .planning-table th:first-child,
-  .planning-table td:first-child {
-    display: none !important;
+  .planning-table {
+    font-size: 11pt;
   }
 
-  /* tweede header (namen) verbergen */
-  .planning-table thead tr:last-child {
-    display: none !important;
+  /* zorg dat de header op elke pagina wordt herhaald */
+  thead {
+    display: table-header-group;
   }
 
-  /* kolommen voor Procor, Bert en aantallen + aanwezigheid verbergen */
-  .col-procor,
-  .col-bert,
-  .aanw-count,
-  .presence-col,
-  .name-vertical {
-    display: none !important;
-  }
-
-  /* extra veiligheid: alles na kolom 8 weg */
+  /* alleen Datum t/m Eind tonen */
+  .planning-table th:nth-child(1),
+  .planning-table td:nth-child(1),   /* prullenbak */
+  .planning-table th:nth-child(8),
+  .planning-table td:nth-child(8),   /* Locatie */
   .planning-table th:nth-child(n+9),
   .planning-table td:nth-child(n+9) {
     display: none !important;
   }
 }
+
