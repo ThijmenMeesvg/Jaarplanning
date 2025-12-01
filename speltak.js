@@ -247,42 +247,42 @@ function renderTable() {
   addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
   addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
   addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
+// --- JEUGD NAMEN ---
+zichtbareJeugd.forEach(j => {
+  const th = document.createElement("th");
+  th.textContent = j.naam;
+  th.classList.add("name-vertical", "presence-col");
+  headerRowTop.appendChild(th);
+});
 
-  // Jeugdleden (één kolom per naam)
-  zichtbareJeugd.forEach(j => {
-    const th = document.createElement("th");
-    th.textContent = j.naam;
-    th.classList.add("name-vertical", "presence-col");
-    headerRowTop.appendChild(th);
-  });
+// --- KIJ­KERS ---
+const kijkersTh = document.createElement("th");
+kijkersTh.textContent = "Kijkers";
+kijkersTh.classList.add("presence-col");
+headerRowTop.appendChild(kijkersTh);
 
-  // Kolom voor kijkers (aantal extra kinderen / broertjes/zusjes)
-  const kijkersTh = document.createElement("th");
-  kijkersTh.textContent = "Kijkers";
-  kijkersTh.classList.add("presence-col");
-  headerRowTop.appendChild(kijkersTh);
+// --- DIVIDER (alleen als er leiding is) ---
+if (zichtbareLeiding.length > 0) {
+  const divider = document.createElement("th");
+  divider.classList.add("col-split");
+  divider.textContent = "";
+  headerRowTop.appendChild(divider);
+}
 
-  // Divider tussen jeugd en leiding
-  if (zichtbareLeiding.length > 0) {
-    const divider = document.createElement("th");
-    divider.classList.add("col-split");
-    divider.textContent = "";
-    headerRowTop.appendChild(divider);
-  }
+// --- LEIDING NAMEN ---
+zichtbareLeiding.forEach(l => {
+  const th = document.createElement("th");
+  th.textContent = l.naam;
+  th.classList.add("name-vertical", "presence-col");
+  headerRowTop.appendChild(th);
+});
 
-  // Leiding (één kolom per naam)
-  zichtbareLeiding.forEach(l => {
-    const th = document.createElement("th");
-    th.textContent = l.naam;
-    th.classList.add("name-vertical", "presence-col");
-    headerRowTop.appendChild(th);
-  });
+// --- EXTRA LEIDING ---
+const extraTh = document.createElement("th");
+extraTh.textContent = "Extra";
+extraTh.classList.add("presence-col");
+headerRowTop.appendChild(extraTh);
 
-  // Kolom voor extra leiding / stagiairs
-  const extraTh = document.createElement("th");
-  extraTh.textContent = "Extra";
-  extraTh.classList.add("presence-col");
-  headerRowTop.appendChild(extraTh);
 
   // Filter
   let lijst = [...opkomsten];
