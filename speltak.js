@@ -240,49 +240,42 @@ function renderTable() {
   addTH(headerRowTop, "Type");
   addTH(headerRowTop, "Start");
   addTH(headerRowTop, "Eind");
-  addTH(headerRowTop, "Locatie");
+  addTH(headerRowTop, "Locatie", 1, 1, "col-locatie");
 
   if (isAdmin) addTH(headerRowTop, "Procor", 1, 1, "col-procor");
 
-  addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
-  addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
-  addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
-// --- JEUGD NAMEN ---
-zichtbareJeugd.forEach(j => {
-  const th = document.createElement("th");
-  th.textContent = j.naam;
-  th.classList.add("name-vertical", "presence-col");
-  headerRowTop.appendChild(th);
-});
-
-// --- KIJ­KERS ---
-const kijkersTh = document.createElement("th");
-kijkersTh.textContent = "Kijkers";
-kijkersTh.classList.add("presence-col");
-headerRowTop.appendChild(kijkersTh);
-
-// --- DIVIDER (alleen als er leiding is) ---
-if (zichtbareLeiding.length > 0) {
-  const divider = document.createElement("th");
-  divider.classList.add("col-split");
-  divider.textContent = "";
-  headerRowTop.appendChild(divider);
-}
-
-// --- LEIDING NAMEN ---
-zichtbareLeiding.forEach(l => {
-  const th = document.createElement("th");
-  th.textContent = l.naam;
-  th.classList.add("name-vertical", "presence-col");
-  headerRowTop.appendChild(th);
-});
-
-// --- EXTRA LEIDING ---
-const extraTh = document.createElement("th");
-extraTh.textContent = "Extra";
-extraTh.classList.add("presence-col");
-headerRowTop.appendChild(extraTh);
-
+      addTH(headerRowTop, "Bert 🧸", 1, 1, "col-bert");
+      addTH(headerRowTop, "Aanw. Leden", 1, 1, "aanw-count");
+      addTH(headerRowTop, "Aanw. Leiding", 1, 1, "aanw-count");
+    
+      // --- JEUGD NAMEN ---
+      zichtbareJeugd.forEach(j => {
+        const th = document.createElement("th");
+        th.textContent = j.naam;
+        th.classList.add("name-vertical", "presence-col");
+        headerRowTop.appendChild(th);
+      });
+    
+      // --- KIJKERS ---
+      const kijkersTh = document.createElement("th");
+      kijkersTh.textContent = "Kijkers";
+      kijkersTh.classList.add("presence-col");
+      headerRowTop.appendChild(kijkersTh);
+    
+      // --- LEIDING NAMEN ---
+      zichtbareLeiding.forEach((l, index) => {
+        const th = document.createElement("th");
+        th.textContent = l.naam;
+        th.classList.add("name-vertical", "presence-col");
+        if (index === 0) th.classList.add("col-split"); // dikke lijn voor eerste leiding
+        headerRowTop.appendChild(th);
+      });
+    
+      // --- EXTRA LEIDING ---
+      const extraTh = document.createElement("th");
+      extraTh.textContent = "Extra";
+      extraTh.classList.add("presence-col");
+      headerRowTop.appendChild(extraTh);
 
   // Filter
   let lijst = [...opkomsten];
@@ -603,7 +596,9 @@ function addTimeCell(tr, o, field) {
 
 function addLocatieCell(tr, o) {
   const td = document.createElement("td");
+  td.classList.add("col-locatie");
   const val = o.locatie || "";
+
 
   if (isAdmin) {
     const input = document.createElement("input");
