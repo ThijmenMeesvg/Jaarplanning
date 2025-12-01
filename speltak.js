@@ -293,8 +293,8 @@ function renderTable() {
 
     if (o.typeOpkomst === "bijzonder") tr.classList.add("row-bijzonder");
     if (o.typeOpkomst === "kamp")      tr.classList.add("row-kamp");
-    if (o.typeOpkomst === "geen")      tr.classList.add("row-grey");
-
+    if (o.typeOpkomst === "geen")      tr.classList.add("row-geenopkomst");
+    
     addDeleteCell(tr, o);
     addDatumCell(tr, o);
     addEditableTextCell(tr, o, "thema", "Typ thema…");
